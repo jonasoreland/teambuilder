@@ -1,6 +1,7 @@
 package org.oreland;
 
 
+import org.oreland.db.Repository;
 import org.oreland.sync.MyClub;
 import org.oreland.sync.Synchronizer;
 import org.oreland.ui.DialogBuilder;
@@ -18,11 +19,13 @@ public class TeamBuilder {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+        Repository repo = new Repository();
         MyClub myclub = new MyClub();
         try {
             myclub.init(prop);
             myclub.setup(prop, new DialogBuilder());
             prop.store(new FileOutputStream("config.properties"), null);
+            myclub.loadGames(repo);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

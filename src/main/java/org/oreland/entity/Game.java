@@ -7,7 +7,11 @@ import java.util.List;
 /**
  * Created by jonas on 10/1/15.
  */
-public class Game {
+public class Game extends Activity {
+
+    public Game(String id, Date date, String desc) {
+        super(id, date, desc);
+    }
 
     public enum Response {
         YES,
@@ -17,19 +21,19 @@ public class Game {
     }
 
     public class Invitation {
-        Player player;
-        Response response;
-        Date invitation_date;
-        Date response_date;
+        public Player player;
+        public Response response;
+        public Date invitation_date;
+        public Date response_date;
     }
 
     public class Participant {
         Player player;
-        Level grade;
+        // TODO(jonas) : Grade each played game for each player ??
+        // Level grade;
     }
 
-    long id;
-    Level level;
-    List<Invitation> invitations = new ArrayList<Invitation>();
-    List<Participant> participants = new ArrayList<Participant>();
+    public Level level;
+    public List<Invitation> invitations = new ArrayList<Invitation>();
+    public List<Participant> participants = new ArrayList<Participant>();
 }

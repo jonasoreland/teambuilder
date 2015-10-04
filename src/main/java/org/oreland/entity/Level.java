@@ -7,6 +7,6 @@ import java.util.ArrayList;
  */
 public class Level {
 
-    int level;
-    String name;
+    public int level;
+    public String name;
 }

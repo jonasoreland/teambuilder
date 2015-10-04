@@ -9,9 +9,9 @@ import java.util.List;
 public class TargetLevel {
 
     public class Distribution {
-        Level level;
-        int count;
+        public Level level;
+        public int count;
     }
 
-    List<Distribution> distribution = new ArrayList<Distribution>();
+    public List<Distribution> distribution = new ArrayList<Distribution>();
 }

@@ -1,5 +1,6 @@
 package org.oreland.entity;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -8,11 +9,15 @@ import java.util.List;
  */
 public class Player {
     public class LevelHistoryEntry {
-        Date date;
-        TargetLevel level;
+        public Date date;
+        public TargetLevel level;
     };
 
-    String first_name;
-    String last_name;
-    List<LevelHistoryEntry> level_history;
+    public String ssno;
+    public String first_name;
+    public String last_name;
+    public List<LevelHistoryEntry> level_history = new ArrayList<>();
+
+    /** cross referenced **/
+    public List<Game> games_played = new ArrayList<>();     // games played
 }

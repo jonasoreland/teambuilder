@@ -4,8 +4,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.oreland.db.Repository;
+import org.oreland.entity.Game;
+import org.oreland.entity.Training;
 import org.oreland.sync.util.FormValues;
-import org.oreland.sync.util.StringWritable;
 import org.oreland.sync.util.SyncHelper;
 import org.oreland.ui.Dialog;
 import org.oreland.ui.DialogBuilder;
@@ -16,6 +18,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +35,7 @@ public class MyClub extends DefaultSynchronizer {
     public static final String START_URL = "https://www.myclub.se/";
     public static final String BASE_URL = "https://member.myclub.se";
     public static final String LOGIN_URL = "https://accounts.myclub.se/d/users/sign_in"; //.json";
+    public static final String CALENDAR_URL = BASE_URL + "/activities/team/show/";
 
     long id = 0;
     private String username = null;
@@ -283,6 +288,44 @@ public class MyClub extends DefaultSynchronizer {
             }
         }
         return conn;
+    }
+
+    public void loadGames(Repository repo) throws IOException, ParseException {
+        Document doc = get(CALENDAR_URL);
+        Element table = doc.select("table[id=grid_activities_table]").first();
+//  0  <td>Tr?ning</td>
+//  1  <td><span class="hidden">20150930</span>30/09</td>
+//  2  <td class="visible-lg">Ons</td>
+//  3  <td>17:00&nbsp;-&nbsp;18:00</td>
+//  4  <td class="visible-lg visible-md">Beckombergahallen kl. 16:45</td>
+//  5  <td class="visible-lg">Tr?ning</td>
+//  6  <td class="visible-lg" title="Annan">Annan</td>
+//  7  <td class="visible-lg visible-md"><a class="tool-tip" title="Ledare/Deltagare" href="/activities/team/view_parts/746587/">2/15</a></td>
+//  8  <td class="visible-lg visible-md"><a class="tool-tip" title="Kallad (Ja/Nej/Kanske)" href="/activities/team/view_invited/746587/">46 (11/16/1)</a></td>
+//  9  <td class="visible-lg visible-md">Godk?nd</td>
+//  10  <td class="button_cell"><a href="/activities/team/edit/746587/" class="btn btn-default btn-xs">V?lj</a></td>
+//  11  <td class="button_cell"><a class="btn btn-xs btn-danger" href=#onclick="$.fn.do_confirm('/activities/team/delete/746587/');"><i class="fa fa-trash"></i></a></td>
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        for (Element row : table.select("tr")) {
+            Elements columns = row.select("td");
+            if (columns.size() == 0)
+                continue;
+            if (columns.size() < 6)
+                continue;
+            String type = columns.get(5).text();
+            if (type.equals("Match")) {
+                String desc = columns.get(0).text();
+                String date = columns.get(1).text().substring(0, 8);
+                String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
+                repo.add(new Game(id, formatter.parse(date), desc));
+                System.out.println(date + " - " + desc + " " + id);
+            } else if (type.matches("Tr.*ning")) {
+                String desc = columns.get(0).text();
+                String date = columns.get(1).text().substring(0, 8);
+                String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
+                repo.add(new Training(id, formatter.parse(date), desc));
+            }
+        }
     }
 
     @Override
