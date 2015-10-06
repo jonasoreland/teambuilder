@@ -5,8 +5,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.oreland.db.Repository;
-import org.oreland.entity.Game;
-import org.oreland.entity.Training;
+import org.oreland.entity.Activity;
 import org.oreland.sync.util.FormValues;
 import org.oreland.sync.util.SyncHelper;
 import org.oreland.ui.Dialog;
@@ -317,13 +316,13 @@ public class MyClub extends DefaultSynchronizer {
                 String desc = columns.get(0).text();
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
-                repo.add(new Game(id, formatter.parse(date), desc));
+                repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.GAME));
                 System.out.println(date + " - " + desc + " " + id);
             } else if (type.matches("Tr.*ning")) {
                 String desc = columns.get(0).text();
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
-                repo.add(new Training(id, formatter.parse(date), desc));
+                repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.TRAINING));
             }
         }
     }

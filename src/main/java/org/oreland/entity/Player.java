@@ -19,5 +19,5 @@ public class Player {
     public List<LevelHistoryEntry> level_history = new ArrayList<>();
 
     /** cross referenced **/
-    public List<Game> games_played = new ArrayList<>();     // games played
+    public List<Activity> games_played = new ArrayList<>();     // games played
 }

@@ -9,4 +9,8 @@ public class Level {
 
     public int level;
     public String name;
+
+    public static Level parse(String level) {
+        return null;
+    }
 }

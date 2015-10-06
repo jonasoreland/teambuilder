@@ -1,6 +1,7 @@
 package org.oreland;
 
 
+import org.oreland.csv.CsvLoader;
 import org.oreland.db.Repository;
 import org.oreland.sync.MyClub;
 import org.oreland.sync.Synchronizer;
@@ -26,6 +27,8 @@ public class TeamBuilder {
             myclub.setup(prop, new DialogBuilder());
             prop.store(new FileOutputStream("config.properties"), null);
             myclub.loadGames(repo);
+            CsvLoader csv = new CsvLoader();
+            csv.saveActivities(repo);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
