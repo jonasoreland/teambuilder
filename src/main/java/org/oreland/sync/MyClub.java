@@ -289,7 +289,7 @@ public class MyClub extends DefaultSynchronizer {
         return conn;
     }
 
-    public void loadGames(Repository repo) throws IOException, ParseException {
+    public void loadActivities(Repository repo) throws IOException, ParseException {
         Document doc = get(CALENDAR_URL);
         Element table = doc.select("table[id=grid_activities_table]").first();
 //  0  <td>Tr?ning</td>

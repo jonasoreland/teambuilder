@@ -4,7 +4,6 @@ package org.oreland;
 import org.oreland.csv.CsvLoader;
 import org.oreland.db.Repository;
 import org.oreland.sync.MyClub;
-import org.oreland.sync.Synchronizer;
 import org.oreland.ui.DialogBuilder;
 
 import java.io.FileInputStream;
@@ -22,13 +21,19 @@ public class TeamBuilder {
         }
         Repository repo = new Repository();
         MyClub myclub = new MyClub();
+        CsvLoader csv = new CsvLoader();
         try {
+            // first load from file
+            csv.load(repo);
+
+            // then load from web
             myclub.init(prop);
             myclub.setup(prop, new DialogBuilder());
             prop.store(new FileOutputStream("config.properties"), null);
-            myclub.loadGames(repo);
-            CsvLoader csv = new CsvLoader();
-            csv.saveActivities(repo);
+            myclub.loadActivities(repo);
+
+            // then save to file
+            csv.save(repo);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

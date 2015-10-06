@@ -18,6 +18,7 @@ public class Activity {
                 return GAME;
             else if (type.matches("TRAINING"))
                 return TRAINING;
+            System.out.println("type: " + type + " => NULL");
             return null;
         }
 
@@ -30,18 +31,30 @@ public class Activity {
         YES,
         NO,
         MAYBE,
-        NO_RESPONSE
+        NO_RESPONSE;
+
+        public static Response parse(String response) {
+            if (response.isEmpty())
+                return NO_RESPONSE;
+            if (response.matches("YES"))
+                return YES;
+            if (response.matches("NO"))
+                return NO;
+            if (response.matches("MAYBE"))
+                return MAYBE;
+            return null;
+        }
     }
 
-    public class Invitation {
+    public static class Invitation {
         public Player player;
         public Response response;
         public Date invitation_date;
         public Date response_date;
     }
 
-    public class Participant {
-        Player player;
+    public static class Participant {
+        public Player player;
         // TODO(jonas) : Grade each played game for each player ??
         // Level grade;
     }
