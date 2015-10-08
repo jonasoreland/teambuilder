@@ -131,7 +131,7 @@ public final class SyncHelper {
 //    }
 
     public static String readInputStream(InputStream in) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF8"));
         StringBuilder buf = new StringBuilder();
         String s = null;
         while ((s = reader.readLine()) != null) {

@@ -20,6 +20,8 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -31,10 +33,14 @@ import java.util.Set;
  */
 public class MyClub extends DefaultSynchronizer {
 
+    public static final String CHARSET = "utf-8";
     public static final String START_URL = "https://www.myclub.se/";
     public static final String BASE_URL = "https://member.myclub.se";
     public static final String LOGIN_URL = "https://accounts.myclub.se/d/users/sign_in"; //.json";
     public static final String CALENDAR_URL = BASE_URL + "/activities/team/show/";
+    public static final String PARTICIPANTS_URL = BASE_URL + "/activities/team/view_parts/";
+    public static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
+    public static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit/";
 
     long id = 0;
     private String username = null;
@@ -62,9 +68,10 @@ public class MyClub extends DefaultSynchronizer {
     private void addRequestHeaders(HttpURLConnection conn) {
         conn.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         conn.addRequestProperty("User-Agent", "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)");
-        conn.addRequestProperty("Accept-Encoding", "");
+        conn.addRequestProperty("Accept-Encoding", CHARSET);
         conn.addRequestProperty("Accept-Language", "en-US,en;q=0.5");
         conn.addRequestProperty("Connection", "keep-alive");
+        conn.addRequestProperty("Accept-Charset", CHARSET);
     }
 
     public Status setup (Properties config, DialogBuilder builder) {
@@ -152,10 +159,9 @@ public class MyClub extends DefaultSynchronizer {
         conn = send(baseUrl, conn);
         int responseCode = conn.getResponseCode();
         String amsg = conn.getResponseMessage();
-        System.out.println("code: " + responseCode + ", msg: " + amsg);
-        String html = SyncHelper.readInputStream(conn.getInputStream());
+        Document doc = Jsoup.parse(conn.getInputStream(), "UTF-8", baseUrl);
         conn.disconnect();
-        return Jsoup.parse(html);
+        return doc;
     }
 
     @Override
@@ -290,6 +296,11 @@ public class MyClub extends DefaultSynchronizer {
     }
 
     public void loadActivities(Repository repo) throws IOException, ParseException {
+        Calendar c = Calendar.getInstance();
+        Date today = c.getTime();
+        c.add(Calendar.DAY_OF_YEAR, 7);
+        Date limit = c.getTime();
+
         Document doc = get(CALENDAR_URL);
         Element table = doc.select("table[id=grid_activities_table]").first();
 //  0  <td>Tr?ning</td>
@@ -312,19 +323,54 @@ public class MyClub extends DefaultSynchronizer {
             if (columns.size() < 6)
                 continue;
             String type = columns.get(5).text();
+            Activity activity = null;
             if (type.equals("Match")) {
                 String desc = columns.get(0).text();
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
-                repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.GAME));
+                activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.GAME));
                 System.out.println(date + " - " + desc + " " + id);
             } else if (type.matches("Tr.*ning")) {
                 String desc = columns.get(0).text();
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
-                repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.TRAINING));
+                activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.TRAINING));
+            }
+            if (activity != null && activity.synced == false && activity.date.before(limit)) {
+                if (activity.level == null) {
+                    loadActivityLevel(repo, activity);
+                }
+                loadInvitations(repo, activity);
+                loadParticipants(repo, activity);
+                if (activity.date.after(today))
+                    activity.synced = true;
             }
         }
+    }
+
+    private void loadActivityLevel(Repository repo, Activity activity) throws IOException {
+        Document doc = get(getDescriptionUrl(activity));
+    }
+
+    private void loadParticipants(Repository repo, Activity activity) throws IOException {
+        Document doc = get(getParticipantsUrl(activity));
+    }
+
+    public void loadInvitations(Repository repo, Activity activity) throws IOException {
+        Document doc = get(getInvitationsUrl(activity));
+        
+    }
+
+    private String getDescriptionUrl(Activity activity) {
+        return DESCRIPTION_URL + activity.id + "/";
+    }
+
+    private String getParticipantsUrl(Activity activity) {
+        return PARTICIPANTS_URL + activity.id + "/";
+    }
+
+    private String getInvitationsUrl(Activity activity) {
+        return INVITATIONS_URL + activity.id + "/";
     }
 
     @Override

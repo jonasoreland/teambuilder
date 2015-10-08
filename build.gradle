@@ -7,6 +7,7 @@ buildscript {
 }
 
 apply plugin: 'java'
+compileJava { options.encoding = "UTF-8" }
 
 repositories {
     mavenCentral()
