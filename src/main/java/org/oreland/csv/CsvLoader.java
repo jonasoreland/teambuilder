@@ -9,6 +9,7 @@ import org.oreland.entity.Level;
 import org.oreland.entity.Player;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,18 +24,17 @@ import java.util.List;
 public class CsvLoader {
 
     String dir = "csv";
-    public String getActivitiesFilename() {
-        return dir + "/" + "activities.csv";
-    }
+    public String getActivitiesFilename() { return dir + "/" + "activities.csv"; }
     public String getParticipantsFilename() {
         return dir + "/" + "participants.csv";
     }
-
     public String getInvitationsFilename() {
         return dir + "/" + "invitations.csv";
     }
+    public String getLevelsFilename() { return dir + "/" + "levels.csv"; }
 
     public void load(Repository repo) throws IOException, ParseException {
+        loadLevels(repo);
         loadActivities(repo);
         loadInvitations(repo);
         loadParticipants(repo);
@@ -42,6 +42,7 @@ public class CsvLoader {
 
     public void save(Repository repo) throws IOException, ParseException {
         new File(dir).mkdirs();
+        saveLevels(repo);
         saveActivities(repo);
         saveInvitations(repo);
         saveParticipants(repo);
@@ -59,9 +60,9 @@ public class CsvLoader {
             Activity g = new Activity();
             g.id = record.get("id");
             g.date = formatter.parse(record.get("date"));
-            g.description = record.get("description");
+            g.title = record.get("title");
             g.type = Activity.Type.parse(record.get("type"));
-            g.level = Level.parse(record.get("level"));
+            g.level = Level.parse(repo, record.get("level"));
             g.synced = Boolean.parseBoolean(record.get("synced"));
             repo.add(g);
         }
@@ -69,13 +70,13 @@ public class CsvLoader {
 
     public void saveActivities(Repository repo) throws IOException {
         final Appendable out = new FileWriter(getActivitiesFilename());
-        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("id", "date", "description", "type", "level", "synced").print(out);
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("id", "date", "title", "type", "level", "synced").print(out);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         for (Activity game : repo.getActivities()) {
             List rec = new ArrayList();
             rec.add(game.id);
             rec.add(formatter.format(game.date));
-            rec.add(game.description);
+            rec.add(game.title);
             rec.add(game.type.toString());
             if (game.level != null)
                 rec.add(game.level.toString());
@@ -146,7 +147,7 @@ public class CsvLoader {
             p.first_name = record.get("first_name");
             p.last_name = record.get("last_name");
             p.ssno = record.get("ssno");
-            game.participants.add(g);
+            repo.addParticipant(game, p);
         }
     }
 
@@ -159,6 +160,30 @@ public class CsvLoader {
             rec.add(participant.second.player.first_name);
             rec.add(participant.second.player.last_name);
             rec.add(participant.second.player.ssno);
+            printer.printRecord(rec);
+        }
+        printer.close();
+    }
+
+    private void loadLevels(Repository repo) throws IOException {
+        File f = new File(getLevelsFilename());
+        if (!f.exists()) {
+            return;
+        }
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(getLevelsFilename()));
+        for (CSVRecord record : records) {
+            Level l =  new Level();
+            l.name = record.get("level");
+            repo.addLevel(l);
+        }
+    }
+
+    private void saveLevels(Repository repo) throws IOException {
+        final Appendable out = new FileWriter(getLevelsFilename());
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("level").print(out);
+        for (Level l : repo.getLevels()) {
+            List rec = new ArrayList();
+            rec.add(l.name);
             printer.printRecord(rec);
         }
         printer.close();

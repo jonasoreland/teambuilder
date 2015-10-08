@@ -6,6 +6,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
+import org.oreland.entity.Level;
+import org.oreland.entity.Player;
 import org.oreland.sync.util.FormValues;
 import org.oreland.sync.util.SyncHelper;
 import org.oreland.ui.Dialog;
@@ -40,7 +42,7 @@ public class MyClub extends DefaultSynchronizer {
     public static final String CALENDAR_URL = BASE_URL + "/activities/team/show/";
     public static final String PARTICIPANTS_URL = BASE_URL + "/activities/team/view_parts/";
     public static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
-    public static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit/";
+    public static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit_info/";
 
     long id = 0;
     private String username = null;
@@ -297,7 +299,7 @@ public class MyClub extends DefaultSynchronizer {
 
     public void loadActivities(Repository repo) throws IOException, ParseException {
         Calendar c = Calendar.getInstance();
-        Date today = c.getTime();
+        Date today = (Date) c.getTime().clone();
         c.add(Calendar.DAY_OF_YEAR, 7);
         Date limit = c.getTime();
 
@@ -329,36 +331,73 @@ public class MyClub extends DefaultSynchronizer {
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.GAME));
-                System.out.println(date + " - " + desc + " " + id);
             } else if (type.matches("Tr.*ning")) {
                 String desc = columns.get(0).text();
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.TRAINING));
             }
+            if (activity != null && activity.type == Activity.Type.GAME && activity.level == null) {
+                System.err.println("Loading level for game " + activity.date);
+                loadActivityLevel(repo, activity);
+            }
             if (activity != null && activity.synced == false && activity.date.before(limit)) {
-                if (activity.level == null) {
-                    loadActivityLevel(repo, activity);
-                }
+                System.err.println("Loading invitations/participants for game " + activity.date);
                 loadInvitations(repo, activity);
                 loadParticipants(repo, activity);
-                if (activity.date.after(today))
+                if (activity.date.before(today)) {
+                    System.out.println("" + activity.date + " is after " + today + " => synced");
                     activity.synced = true;
+                }
             }
         }
     }
 
     private void loadActivityLevel(Repository repo, Activity activity) throws IOException {
         Document doc = get(getDescriptionUrl(activity));
+        String description = doc.select("textarea[id=id_description]").first().text();
+        Set<Level> match = new HashSet<>();
+        for (Level l : repo.getLevels()) {
+            if (description.contains(l.name)) {
+                match.add(l);
+            }
+        }
+        if (match.size() == 1) {
+            activity.level = match.iterator().next();
+        } else {
+            // Could not match level, need to ask user!
+            activity.description = description;
+        }
     }
 
     private void loadParticipants(Repository repo, Activity activity) throws IOException {
+        activity.participants.clear();
         Document doc = get(getParticipantsUrl(activity));
+        Element table = doc.select("table[id=participants_table]").first().select("tbody").first();
+        for (Element row : table.select("tr")) {
+            Elements columns = row.select("td");
+            if (columns.size() != 6)
+                continue;
+
+// <tr>
+// <td>Albin</td>
+// <td>Str?mgren</td>
+// <td>20061102xxxx</td>
+// <td>Godk?nd</td>
+// <td></td>
+// <td></td>
+// </tr>
+
+            Player p = new Player();
+            p.first_name = columns.get(0).text();
+            p.last_name = columns.get(1).text();
+            p.ssno = columns.get(2).text();
+            repo.addParticipant(activity, p);
+        }
     }
 
     public void loadInvitations(Repository repo, Activity activity) throws IOException {
         Document doc = get(getInvitationsUrl(activity));
-        
     }
 
     private String getDescriptionUrl(Activity activity) {

@@ -62,6 +62,7 @@ public class Activity {
     public String id;
     public Type type;
     public Date date;
+    public String title;
     public String description;
     public boolean synced;
     public Level level;
@@ -73,7 +74,7 @@ public class Activity {
 
     public Activity(String id, Date date, String desc, Type type) {
         this.id = id;
-        this.description = desc;
+        this.title = desc;
         this.date = date;
         this.synced = false;
         this.type = type;

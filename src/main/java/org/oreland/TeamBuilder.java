@@ -27,10 +27,12 @@ public class TeamBuilder {
             csv.load(repo);
 
             // then load from web
-            myclub.init(prop);
-            myclub.setup(prop, new DialogBuilder());
-            prop.store(new FileOutputStream("config.properties"), null);
-            myclub.loadActivities(repo);
+            if (true) {
+                myclub.init(prop);
+                myclub.setup(prop, new DialogBuilder());
+                prop.store(new FileOutputStream("config.properties"), null);
+                myclub.loadActivities(repo);
+            }
 
             // then save to file
             csv.save(repo);

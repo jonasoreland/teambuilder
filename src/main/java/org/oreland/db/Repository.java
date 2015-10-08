@@ -1,17 +1,34 @@
 package org.oreland.db;
 
 import org.oreland.entity.Activity;
+import org.oreland.entity.Level;
 import org.oreland.entity.Player;
+import org.oreland.sync.util.Part;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Created by jonas on 10/4/15.
  */
 public class Repository {
     HashMap<String, Activity> activities = new HashMap<>();
-    HashMap<String, Player> players = new HashMap<>();
+    HashMap<String, Player> playersByName = new HashMap<>();
+    List<Level> levels = new ArrayList<>();
+
+    public Iterable<Level> getLevels() {
+        return levels;
+    }
+
+    public void addLevel(Level l) {
+        if (Level.parse(this, l.name) == null)
+            levels.add(l);
+    }
 
     public static class Pair<T,U> {
         public Pair(T t, U u) {
@@ -23,10 +40,10 @@ public class Repository {
     };
 
     public Player add(Player p) {
-        if (!players.containsKey(p.ssno)) {
-            players.put(p.ssno, p);
-        }
-        return players.get(p.ssno);
+        String key = p.first_name + p.last_name;
+        if (!playersByName.containsKey(key))
+            playersByName.put(key, p);
+        return playersByName.get(key);
     }
 
     public Activity add(Activity game) {
@@ -142,5 +159,14 @@ public class Repository {
 
     public Activity getActivity(String game_id) {
         return activities.get(game_id);
+    }
+
+    public void addParticipant(Activity activity, Player p) {
+        Activity.Participant part = new Activity.Participant();
+        part.player = add(p);
+        if (!activity.participants.contains(part)) {
+            activity.participants.add(part);
+            part.player.games_played.add(activity);
+        }
     }
 };
