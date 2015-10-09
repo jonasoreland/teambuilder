@@ -73,7 +73,7 @@ public class CsvLoader {
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("id", "date", "title", "type", "level", "synced").print(out);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         for (Activity game : repo.getActivities()) {
-            List rec = new ArrayList();
+            List<String> rec = new ArrayList<>();
             rec.add(game.id);
             rec.add(formatter.format(game.date));
             rec.add(game.title);
@@ -82,7 +82,7 @@ public class CsvLoader {
                 rec.add(game.level.toString());
             else
                 rec.add("");
-            rec.add(game.synced);
+            rec.add(Boolean.toString(game.synced));
             printer.printRecord(rec);
         }
         printer.close();
@@ -117,7 +117,7 @@ public class CsvLoader {
         final Appendable out = new FileWriter(dir + "/" + "invitations.csv");
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "ssno", "invitation_date", "reponse", "response_date").print(out);
         for (Repository.Pair<Activity, Activity.Invitation> invitation : repo.getInvitations()) {
-            List rec = new ArrayList();
+            List<String> rec = new ArrayList<>();
             rec.add(invitation.first.id);
             rec.add(invitation.second.player.first_name);
             rec.add(invitation.second.player.last_name);
@@ -155,7 +155,7 @@ public class CsvLoader {
         final Appendable out = new FileWriter(getParticipantsFilename());
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "ssno").print(out);
         for (Repository.Pair<Activity, Activity.Participant> participant : repo.getParticipants()) {
-            List rec = new ArrayList();
+            List<String> rec = new ArrayList<>();
             rec.add(participant.first.id);
             rec.add(participant.second.player.first_name);
             rec.add(participant.second.player.last_name);
@@ -182,7 +182,7 @@ public class CsvLoader {
         final Appendable out = new FileWriter(getLevelsFilename());
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("level").print(out);
         for (Level l : repo.getLevels()) {
-            List rec = new ArrayList();
+            List<String> rec = new ArrayList<>();
             rec.add(l.name);
             printer.printRecord(rec);
         }
