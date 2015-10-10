@@ -169,4 +169,10 @@ public class Repository {
             part.player.games_played.add(activity);
         }
     }
+    public void addInvitation(Activity activity, Activity.Invitation invitation) {
+        if (!activity.invitations.contains(invitation)) {
+            activity.invitations.add(invitation);
+            invitation.player.games_invited.add(invitation);
+        }
+    }
 };

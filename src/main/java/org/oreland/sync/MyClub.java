@@ -77,6 +77,7 @@ public class MyClub extends DefaultSynchronizer {
     }
 
     public Status setup (Properties config, DialogBuilder builder) {
+        System.out.println("Login...");
         for (int i = 0; i < 3; i++) {
             Status s = connect();
             if (s == Status.NEED_AUTH) {
@@ -104,6 +105,7 @@ public class MyClub extends DefaultSynchronizer {
                 String club = select("Select club: ", builder, BASE_URL, "a[href*=change_club]");
                 config.setProperty("club", club);
             }
+            System.out.println("Loading club");
             doc = get(BASE_URL+config.getProperty("club"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -114,6 +116,7 @@ public class MyClub extends DefaultSynchronizer {
                 String club = select("Select section: ", builder, BASE_URL, "a[href*=change_section]");
                 config.setProperty("section", club);
             }
+            System.out.println("Loading section");
             doc = get(BASE_URL+config.getProperty("section"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -124,6 +127,7 @@ public class MyClub extends DefaultSynchronizer {
                 String club = select("Select team: ", builder, BASE_URL, "a[href*=change_team]");
                 config.setProperty("team", club);
             }
+            System.out.println("Loading team");
             doc = get(BASE_URL+config.getProperty("team"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -159,8 +163,6 @@ public class MyClub extends DefaultSynchronizer {
         conn.setInstanceFollowRedirects(false);
         addRequestHeaders(conn);
         conn = send(baseUrl, conn);
-        int responseCode = conn.getResponseCode();
-        String amsg = conn.getResponseMessage();
         Document doc = Jsoup.parse(conn.getInputStream(), "UTF-8", baseUrl);
         conn.disconnect();
         return doc;
@@ -189,9 +191,6 @@ public class MyClub extends DefaultSynchronizer {
             addRequestHeaders(conn);
             {
                 conn = send(START_URL, conn);
-                int responseCode = conn.getResponseCode();
-                String amsg = conn.getResponseMessage();
-                System.out.println("code: " + responseCode + ", msg: " + amsg);
             }
             conn.disconnect();
 
@@ -203,15 +202,11 @@ public class MyClub extends DefaultSynchronizer {
             addRequestHeaders(conn);
             {
                 conn = send(BASE_URL, conn);
-                int responseCode = conn.getResponseCode();
-                String amsg = conn.getResponseMessage();
-                System.out.println("code: " + responseCode + ", msg: " + amsg);
                 getFormValues(conn);
                 authToken = formValues.get("authenticity_token");
             }
             conn.disconnect();
 
-            System.out.println("authToken: " + authToken);
             if (authToken == null) {
                 return Status.ERROR;
             }
@@ -244,9 +239,6 @@ public class MyClub extends DefaultSynchronizer {
                 wr.flush();
                 wr.close();
                 send(LOGIN_URL, conn);
-                int responseCode = conn.getResponseCode();
-                String amsg = conn.getResponseMessage();
-                System.out.println("code: " + responseCode + ", msg: " + amsg);
             }
 
             conn = (HttpURLConnection) new URL(BASE_URL).openConnection();
@@ -254,9 +246,6 @@ public class MyClub extends DefaultSynchronizer {
             addRequestHeaders(conn);
             {
                 conn = send(START_URL, conn);
-                int responseCode = conn.getResponseCode();
-                String amsg = conn.getResponseMessage();
-                System.out.println("code: " + responseCode + ", msg: " + amsg);
                 String html = SyncHelper.readInputStream(conn.getInputStream());
                 conn.disconnect();
                 Document doc = Jsoup.parse(html);
@@ -298,9 +287,11 @@ public class MyClub extends DefaultSynchronizer {
     }
 
     public void loadActivities(Repository repo) throws IOException, ParseException {
+        System.out.println("Load activities list");
         Calendar c = Calendar.getInstance();
+        c.add(Calendar.DAY_OF_YEAR, -1);
         Date today = (Date) c.getTime().clone();
-        c.add(Calendar.DAY_OF_YEAR, 7);
+        c.add(Calendar.DAY_OF_YEAR, 8);
         Date limit = c.getTime();
 
         Document doc = get(CALENDAR_URL);
@@ -388,17 +379,78 @@ public class MyClub extends DefaultSynchronizer {
 // <td></td>
 // <td></td>
 // </tr>
-
                 Player p = new Player();
                 p.first_name = columns.get(0).text();
                 p.last_name = columns.get(1).text();
-                p.ssno = columns.get(2).text();
                 repo.addParticipant(activity, p);
             }
         }
     }
-    public void loadInvitations(Repository repo, Activity activity) throws IOException {
+    public void loadInvitations(Repository repo, Activity activity) throws IOException, ParseException {
+        activity.invitations.clear();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:ss");
         Document doc = get(getInvitationsUrl(activity));
+        Element table = doc.select("table[id=invited_table]").first().select("tbody").first();
+        for (Element row : table.select("tr")) {
+            Elements columns = row.select("td");
+            if (columns.size() < 6)
+                continue;
+//          <tr>
+//       0     <td class=" sorting_1">Alfred</td>
+//       1     <td class=" ">Wettergren</td>
+//       2     <td class="hidden-xs ">Deltagare</td>
+//       3     <td class="visible-lg visible-md "><p class="btn btn-xs tool-tip pop-over" title="" data-content="mail.address@somewhere.org" data-toggle="popover" href="#" data-original-title=""></p></td>
+//       4     <td class="hidden-xs ">1</td>
+//       5     <td class="visible-lg ">2015-10-08 12:25</td>
+//       6     NEXT MAIL <td class="visible-lg "></td>
+//       7     <td class=" ">
+//            <div class="btn-group" data-toggle="buttons-radio">
+//            <button class="respond btn active btn-success btn-xs" data-response="yes" data-id="1648554" type="button">Ja</button>
+//            <button class="respond btn btn-default btn-xs" btn-default="" data-response="maybe" data-id="1648554" type="button">Kanske</button>
+//            <button class="respond btn btn-default btn-xs" data-response="no" data-id="1648554" type="button">Nej</button>
+//            </div>
+//            </td>
+//       8     <td class="visible-lg visible-md ">2015-10-08 14:38</td>
+//       9     <td class="button_cell "></td>
+//          </tr>
+
+            // If no invitation is sent...skip player
+            if (columns.get(5).text().isEmpty())
+                continue;
+
+            int response_col = 7;
+            int response_date_col = 8;
+            if (columns.size() == 9) {
+
+            } else if (columns.size() == 8) {
+                // Activity completed
+                response_col = 6;
+                response_date_col = 7;
+            }
+            Player p = new Player();
+            p.first_name = columns.get(0).text();
+            p.last_name = columns.get(1).text();
+            Activity.Invitation invitation = new Activity.Invitation();
+            invitation.player = repo.add(p);
+            if (!columns.get(5).text().isEmpty())
+                invitation.invitation_date = formatter.parse(columns.get(5).text());
+            if (!columns.get(response_date_col).text().isEmpty()) {
+                invitation.response_date = formatter.parse(columns.get(response_date_col).text());
+                Element col = columns.get(response_col);
+                Element comment = col.select("p").first();
+                if (comment != null) {
+                    invitation.response_comment = comment.attr("data-content");
+                }
+                for (Element e : col.select("button")) {
+                    if (e.attr("class").contains("active")) {
+                        invitation.response = Activity.Response.parse(e.attr("data-response"));
+                    }
+                }
+                if (invitation.response == null)
+                    throw new ParseException("Unable to find response in: " + col.toString(), 0);
+            }
+            repo.addInvitation(activity, invitation);
+        }
     }
 
     private String getDescriptionUrl(Activity activity) {

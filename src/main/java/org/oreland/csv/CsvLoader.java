@@ -9,7 +9,6 @@ import org.oreland.entity.Level;
 import org.oreland.entity.Player;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -93,7 +92,7 @@ public class CsvLoader {
         if (!f.exists()) {
             return;
         }
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd.HHmmss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd HH:ss");
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(getInvitationsFilename()));
         for (CSVRecord record : records) {
             Activity.Invitation g = new Activity.Invitation();
@@ -102,32 +101,41 @@ public class CsvLoader {
             Player p = new Player();
             p.first_name = record.get("first_name");
             p.last_name = record.get("last_name");
-            p.ssno = record.get("ssno");
-            g.invitation_date = formatter.parse(record.get("invitation_date"));
+            g.player = repo.add(p);
+            if (!record.get("invitation_date").isEmpty())
+                g.invitation_date = formatter.parse(record.get("invitation_date"));
             g.response = Activity.Response.parse(record.get("response"));
             if (g.response != Activity.Response.NO_RESPONSE) {
                 g.response_date = formatter.parse(record.get("response_date"));
+                g.response_comment = record.get("response_comment");
             }
             game.invitations.add(g);
         }
     }
 
     public void saveInvitations(Repository repo) throws ParseException, IOException {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd.HHmmss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd HH:ss");
         final Appendable out = new FileWriter(dir + "/" + "invitations.csv");
-        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "ssno", "invitation_date", "reponse", "response_date").print(out);
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "invitation_date", "response", "response_date", "response_comment").print(out);
         for (Repository.Pair<Activity, Activity.Invitation> invitation : repo.getInvitations()) {
             List<String> rec = new ArrayList<>();
             rec.add(invitation.first.id);
             rec.add(invitation.second.player.first_name);
             rec.add(invitation.second.player.last_name);
-            rec.add(invitation.second.player.ssno);
-            rec.add(formatter.format(invitation.second.invitation_date));
-            rec.add(invitation.second.response.toString());
-            if (invitation.second.response != Activity.Response.NO_RESPONSE)
-                rec.add(formatter.format(invitation.second.response_date));
+            if (invitation.second.invitation_date != null)
+                rec.add(formatter.format(invitation.second.invitation_date));
             else
                 rec.add("");
+            if (invitation.second.response != null &&
+                    invitation.second.response != Activity.Response.NO_RESPONSE) {
+                rec.add(invitation.second.response.toString());
+                rec.add(formatter.format(invitation.second.response_date));
+                rec.add(invitation.second.response_comment);
+            } else {
+                rec.add("");
+                rec.add("");
+                rec.add("");
+            }
             printer.printRecord(rec);
         }
         printer.close();
@@ -146,20 +154,18 @@ public class CsvLoader {
             Player p = new Player();
             p.first_name = record.get("first_name");
             p.last_name = record.get("last_name");
-            p.ssno = record.get("ssno");
             repo.addParticipant(game, p);
         }
     }
 
     public void saveParticipants(Repository repo) throws ParseException, IOException {
         final Appendable out = new FileWriter(getParticipantsFilename());
-        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "ssno").print(out);
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name").print(out);
         for (Repository.Pair<Activity, Activity.Participant> participant : repo.getParticipants()) {
             List<String> rec = new ArrayList<>();
             rec.add(participant.first.id);
             rec.add(participant.second.player.first_name);
             rec.add(participant.second.player.last_name);
-            rec.add(participant.second.player.ssno);
             printer.printRecord(rec);
         }
         printer.close();

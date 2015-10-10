@@ -13,11 +13,11 @@ public class Player {
         public TargetLevel level;
     };
 
-    public String ssno;
     public String first_name;
     public String last_name;
     public List<LevelHistoryEntry> level_history = new ArrayList<>();
 
     /** cross referenced **/
     public List<Activity> games_played = new ArrayList<>();     // games played
+    public List<Activity.Invitation> games_invited = new ArrayList<>();
 }

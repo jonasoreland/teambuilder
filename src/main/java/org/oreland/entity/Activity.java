@@ -34,21 +34,25 @@ public class Activity {
         NO_RESPONSE;
 
         public static Response parse(String response) {
+            if (response == null)
+                return null;
             if (response.isEmpty())
                 return NO_RESPONSE;
-            if (response.matches("YES"))
+            String tmp = response.toLowerCase();
+            if (tmp.matches("yes"))
                 return YES;
-            if (response.matches("NO"))
+            if (tmp.matches("no"))
                 return NO;
-            if (response.matches("MAYBE"))
+            if (tmp.matches("maybe"))
                 return MAYBE;
-            return null;
+            return NO_RESPONSE;
         }
     }
 
     public static class Invitation {
         public Player player;
         public Response response;
+        public String response_comment;
         public Date invitation_date;
         public Date response_date;
     }
