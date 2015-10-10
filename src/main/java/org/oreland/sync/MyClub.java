@@ -337,8 +337,10 @@ public class MyClub extends DefaultSynchronizer {
                 loadInvitations(repo, activity);
                 loadParticipants(repo, activity);
                 if (activity.date.before(today)) {
-                    System.out.println("" + activity.date + " is after " + today + " => synced");
-                    activity.synced = true;
+                    if (columns.get(9).text().matches(".*[Gg]odk.*nd")) {
+                        System.out.println("" + activity.date + " is after " + today + " => synced");
+                        activity.synced = true;
+                    }
                 }
             }
         }
