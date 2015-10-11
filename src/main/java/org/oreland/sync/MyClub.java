@@ -366,7 +366,10 @@ public class MyClub extends DefaultSynchronizer {
     private void loadParticipants(Repository repo, Activity activity) throws IOException {
         activity.participants.clear();
         Document doc = get(getParticipantsUrl(activity));
-        for (String key : new String[]{"participants_table", "leaders_table"}) {
+        String tables[] = new String[]{"participants_table", "leaders_table"};
+        Player.Type types[] = new Player.Type[]{ Player.Type.PLAYER, Player.Type.LEADER };
+        for (int i = 0; i < tables.length;  i++) {
+            String key = tables[i];
             Element table = doc.select("table[id=" + key + "]").first().select("tbody").first();
             for (Element row : table.select("tr")) {
                 Elements columns = row.select("td");
@@ -384,6 +387,7 @@ public class MyClub extends DefaultSynchronizer {
                 Player p = new Player();
                 p.first_name = columns.get(0).text();
                 p.last_name = columns.get(1).text();
+                p.type = types[i];
                 repo.addParticipant(activity, p);
             }
         }
@@ -432,6 +436,7 @@ public class MyClub extends DefaultSynchronizer {
             Player p = new Player();
             p.first_name = columns.get(0).text();
             p.last_name = columns.get(1).text();
+            p.type = Player.Type.parse(columns.get(2).text());
             Activity.Invitation invitation = new Activity.Invitation();
             invitation.player = repo.add(p);
             if (!columns.get(5).text().isEmpty())

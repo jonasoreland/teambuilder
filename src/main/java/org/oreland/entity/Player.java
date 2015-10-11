@@ -13,8 +13,33 @@ public class Player {
         public TargetLevel level;
     };
 
+    public enum Type {
+        PLAYER,
+        LEADER;
+
+        public static Type parse(String s) {
+            String tmp = s.toLowerCase();
+            if (tmp.matches("ledare"))
+                return LEADER;
+            if (tmp.matches("deltagare"))
+                return PLAYER;
+            return null;
+        }
+
+        public String toString() {
+            switch (this) {
+                case PLAYER:
+                    return "Deltagare";
+                case LEADER:
+                    return "Ledare";
+            }
+            return null;
+        }
+    };
+
     public String first_name;
     public String last_name;
+    public Type type;
     public List<LevelHistoryEntry> level_history = new ArrayList<>();
 
     /** cross referenced **/
