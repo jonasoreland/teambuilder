@@ -3,15 +3,11 @@ package org.oreland.db;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
 import org.oreland.entity.Player;
-import org.oreland.sync.util.Part;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * Created by jonas on 10/4/15.
@@ -28,6 +24,10 @@ public class Repository {
     public void addLevel(Level l) {
         if (Level.parse(this, l.name) == null)
             levels.add(l);
+    }
+
+    public Iterator<Player> getPlayers() {
+        return playersByName.values().iterator();
     }
 
     public static class Pair<T,U> {

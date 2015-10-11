@@ -17,8 +17,6 @@
 
 package org.oreland.sync;
 
-import org.oreland.ui.DialogBuilder;
-
 import java.util.Properties;
 
 public interface Synchronizer {

@@ -1,6 +1,7 @@
 package org.oreland;
 
 
+import org.oreland.analysis.Analysis;
 import org.oreland.csv.CsvLoader;
 import org.oreland.db.Repository;
 import org.oreland.sync.MyClub;
@@ -17,7 +18,6 @@ public class TeamBuilder {
         try {
             prop.load(new FileInputStream("config.properties"));
         } catch (Exception ex) {
-            ex.printStackTrace();
         }
         Repository repo = new Repository();
         MyClub myclub = new MyClub();
@@ -33,11 +33,19 @@ public class TeamBuilder {
                 prop.store(new FileOutputStream("config.properties"), null);
                 myclub.loadActivities(repo);
             }
-
-            // then save to file
-            csv.save(repo);
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+
+        Analysis analysis = new Analysis(repo);
+        int ungraded = analysis.countUngradedPlayers();
+        System.out.println("Found " + ungraded + " ungraded players");
+
+        // then save to file
+        try {
+            csv.save(repo);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

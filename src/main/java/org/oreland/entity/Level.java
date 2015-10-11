@@ -1,10 +1,7 @@
 package org.oreland.entity;
 
 import org.oreland.db.Repository;
-import org.oreland.sync.util.StringWritable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
