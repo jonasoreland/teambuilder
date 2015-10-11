@@ -32,7 +32,7 @@ public class Analysis {
     }
 
     public Iterator<Player> getUngradedPlayers() {
-        return getPlayers(new Filter<Player>() {
+        return new FilteredIterator<>(repo.getPlayers(), new Filter<Player>() {
             @Override
             public boolean OK(Player player) {
                 return player.level_history.isEmpty();
@@ -40,43 +40,48 @@ public class Analysis {
         });
     }
 
-    Iterator<Player> getPlayers(final Filter<Player> filter) {
-        final Iterator<Player> all = repo.getPlayers();
-        return new Iterator<Player>() {
-            Player next = null;
-            @Override
-            public boolean hasNext() {
-                next = getNext();
-                if (next != null)
-                    return true;
-                return false;
-            }
+    private class FilteredIterator<T> implements Iterator<T> {
 
-            private Player getNext() {
-                while (true) {
-                    if (!all.hasNext())
-                        return null;
-                    Player p = all.next();
-                    if (p == null)
-                        return null;
-                    if (filter.OK(p))
-                        return p;
-                }
-            }
+        private final Iterator<T> all;
+        private final Filter<T> filter;
+        private T next = null;
 
-            @Override
-            public Player next() {
-                if (next != null) {
-                    Player p = next;
-                    next = null;
+        FilteredIterator(Iterator<T> all, Filter<T> filter) {
+            this.all = all;
+            this.filter = filter;
+        }
+        @Override
+        public boolean hasNext() {
+            next = getNext();
+            if (next != null)
+                return true;
+            return false;
+        }
+
+        @Override
+        public T next() {
+            if (next != null) {
+                T p = next;
+                next = null;
+                return p;
+            }
+            return getNext();
+        }
+        private T getNext() {
+            while (true) {
+                if (!all.hasNext())
+                    return null;
+                T p = all.next();
+                if (p == null)
+                    return null;
+                if (filter.OK(p))
                     return p;
-                }
-                return getNext();
             }
+        }
 
-            @Override
-            public void remove() {
-            }
-        };
-    }
+        @Override
+        public void remove() {
+
+        }
+    };
 }
