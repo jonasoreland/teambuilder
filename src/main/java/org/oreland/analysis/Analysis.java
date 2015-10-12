@@ -35,7 +35,7 @@ public class Analysis {
         return new FilteredIterator<>(repo.getPlayers(), new Filter<Player>() {
             @Override
             public boolean OK(Player player) {
-                return player.level_history.isEmpty();
+                return player.type == Player.Type.PLAYER && player.level_history.isEmpty();
             }
         });
     }
