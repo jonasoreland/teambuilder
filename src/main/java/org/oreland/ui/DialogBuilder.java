@@ -1,6 +1,7 @@
 package org.oreland.ui;
 
-import java.io.DataInputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
@@ -56,7 +57,7 @@ class Question extends Dialog {
         System.out.print(prompt);
         Result result = Result.OK;
         try {
-            result.stringResult = new DataInputStream(System.in).readLine();
+            result.stringResult = new BufferedReader(new InputStreamReader(System.in)).readLine();
             return result;
         } catch (IOException e) {
             e.printStackTrace();
