@@ -43,11 +43,13 @@ public class MyClub extends DefaultSynchronizer {
     public static final String PARTICIPANTS_URL = BASE_URL + "/activities/team/view_parts/";
     public static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
     public static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit_info/";
+    public static final String PLAYER_SCREEN_URL = BASE_URL + "/ut/team/";
 
     long id = 0;
     private String username = null;
     private String password = null;
     private String authToken = null;
+    private Properties config = null;
 
     @Override
     public String getName() {
@@ -126,6 +128,8 @@ public class MyClub extends DefaultSynchronizer {
             if (!config.containsKey("team")) {
                 String club = select("Select team: ", builder, BASE_URL, "a[href*=change_team]");
                 config.setProperty("team", club);
+                String teamno = club.substring(club.indexOf('=')+1);
+                config.setProperty("teamno", teamno);
             }
             System.out.println("Loading team");
             doc = get(BASE_URL+config.getProperty("team"));
@@ -134,6 +138,19 @@ public class MyClub extends DefaultSynchronizer {
             return Status.ERROR;
         }
 
+        try {
+            if (!config.containsKey("Spelarinfo")) {
+                doc = get(PLAYER_SCREEN_URL + config.getProperty("teamno") + "/members/");
+                Element element = doc.select("p:contains(Spelarinformation) > *").first();
+                String spelarinfo_field = element.attr("value");
+                config.put("Spelarinfo", spelarinfo_field);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Status.ERROR;
+        }
+
+        this.config = config;
         return Status.OK;
     }
 
@@ -284,6 +301,10 @@ public class MyClub extends DefaultSynchronizer {
             }
         }
         return conn;
+    }
+
+    public void loadPlayers(Repository repo) throws IOException {
+        System.out.println("Load player list");
     }
 
     public void loadActivities(Repository repo) throws IOException, ParseException {

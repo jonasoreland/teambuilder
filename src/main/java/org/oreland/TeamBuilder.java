@@ -31,6 +31,7 @@ public class TeamBuilder {
                 myclub.init(prop);
                 myclub.setup(prop, new DialogBuilder());
                 prop.store(new FileOutputStream("config.properties"), null);
+                myclub.loadPlayers(repo);
                 myclub.loadActivities(repo);
             }
         } catch (Exception ex) {
