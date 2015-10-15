@@ -4,10 +4,15 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+
 import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
 import org.oreland.entity.Player;
+import org.oreland.entity.TargetLevel;
 import org.oreland.sync.util.FormValues;
 import org.oreland.sync.util.SyncHelper;
 import org.oreland.ui.Dialog;
@@ -43,7 +48,7 @@ public class MyClub extends DefaultSynchronizer {
     public static final String PARTICIPANTS_URL = BASE_URL + "/activities/team/view_parts/";
     public static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
     public static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit_info/";
-    public static final String PLAYER_SCREEN_URL = BASE_URL + "/ut/team/";
+    public static final String PLAYER_URL = BASE_URL + "/ut/team/";
 
     long id = 0;
     private String username = null;
@@ -140,7 +145,7 @@ public class MyClub extends DefaultSynchronizer {
 
         try {
             if (!config.containsKey("Spelarinfo")) {
-                doc = get(PLAYER_SCREEN_URL + config.getProperty("teamno") + "/members/");
+                doc = get(PLAYER_URL + config.getProperty("teamno") + "/members/");
                 Element element = doc.select("p:contains(Spelarinformation) > *").first();
                 String spelarinfo_field = element.attr("value");
                 config.put("Spelarinfo", spelarinfo_field);
@@ -181,6 +186,16 @@ public class MyClub extends DefaultSynchronizer {
         addRequestHeaders(conn);
         conn = send(baseUrl, conn);
         Document doc = Jsoup.parse(conn.getInputStream(), "UTF-8", baseUrl);
+        conn.disconnect();
+        return doc;
+    }
+
+    private JSONArray getJsonArray(String baseUrl) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl).openConnection();
+        conn.setInstanceFollowRedirects(false);
+        addRequestHeaders(conn);
+        conn = send(baseUrl, conn);
+        JSONArray doc = SyncHelper.parseJsonArray(conn.getInputStream());
         conn.disconnect();
         return doc;
     }
@@ -305,6 +320,21 @@ public class MyClub extends DefaultSynchronizer {
 
     public void loadPlayers(Repository repo) throws IOException {
         System.out.println("Load player list");
+        String key = config.getProperty("Spelarinfo");
+        JSONArray players = getJsonArray(PLAYER_URL + config.getProperty("teamno") + "/members/json");
+        for (int i = 0; i < players.length(); i++) {
+            JSONObject o = players.getJSONObject(i);
+            Player p = new Player();
+            p.first_name = o.getString("first_name");
+            p.last_name = o.getString("last_name");
+            p.type = o.getBoolean("is_leader") ? Player.Type.LEADER : Player.Type.PLAYER;
+            p = repo.add(p);
+            String targetstr = o.optString(key);
+            TargetLevel level = TargetLevel.parseJson(repo, targetstr);
+            if (level != null) {
+              repo.addTarget(p, level, Calendar.getInstance().getTime());
+            }
+        }
     }
 
     public void loadActivities(Repository repo) throws IOException, ParseException {
@@ -409,6 +439,9 @@ public class MyClub extends DefaultSynchronizer {
                 p.first_name = columns.get(0).text();
                 p.last_name = columns.get(1).text();
                 p.type = types[i];
+                if (repo.getPlayer(p.first_name, p.last_name) == null) {
+                  continue;
+                }
                 repo.addParticipant(activity, p);
             }
         }
@@ -458,6 +491,9 @@ public class MyClub extends DefaultSynchronizer {
             p.first_name = columns.get(0).text();
             p.last_name = columns.get(1).text();
             p.type = Player.Type.parse(columns.get(2).text());
+            if (repo.getPlayer(p.first_name, p.last_name) == null) {
+              continue;
+            }
             Activity.Invitation invitation = new Activity.Invitation();
             invitation.player = repo.add(p);
             if (!columns.get(5).text().isEmpty())

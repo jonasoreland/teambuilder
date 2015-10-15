@@ -8,7 +8,7 @@ import java.util.List;
  * Created by jonas on 10/1/15.
  */
 public class Player {
-    public class LevelHistoryEntry {
+    static public class LevelHistoryEntry {
         public Date date;
         public TargetLevel level;
     };
@@ -40,6 +40,7 @@ public class Player {
     public String first_name;
     public String last_name;
     public Type type;
+    public TargetLevel target_level;
     public List<LevelHistoryEntry> level_history = new ArrayList<>();
 
     /** cross referenced **/

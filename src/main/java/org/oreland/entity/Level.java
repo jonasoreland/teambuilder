@@ -16,6 +16,19 @@ public class Level {
         return name;
     }
 
+    public static Level parseOrCreate(Repository repo, String level) {
+        if (level == null || level.isEmpty())
+            return null;
+
+        Level l = parse(repo, level);
+        if (l == null) {
+          l = new Level();
+          l.name = level;
+          repo.addLevel(l);
+        }
+        return l;
+    }
+
     public static Level parse(Repository repo, String level) {
         if (level == null || level.isEmpty())
             return null;

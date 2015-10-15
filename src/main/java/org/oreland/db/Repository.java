@@ -3,8 +3,10 @@ package org.oreland.db;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
 import org.oreland.entity.Player;
+import org.oreland.entity.TargetLevel;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -44,6 +46,21 @@ public class Repository {
         if (!playersByName.containsKey(key))
             playersByName.put(key, p);
         return playersByName.get(key);
+    }
+
+    public Player getPlayer(String first_name, String last_name) {
+        String key = first_name + last_name;
+        return playersByName.get(key);
+    }
+
+    public void addTarget(Player p, TargetLevel level, Date date) {
+      if (p.target_level == null || !p.target_level.equal(level)) {
+        Player.LevelHistoryEntry entry = new Player.LevelHistoryEntry();
+        entry.level = level;
+        entry.date = date;
+        p.target_level = level;
+        p.level_history.add(entry);
+      }
     }
 
     public Activity add(Activity game) {

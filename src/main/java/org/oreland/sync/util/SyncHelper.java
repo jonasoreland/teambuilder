@@ -17,8 +17,9 @@
 
 package org.oreland.sync.util;
 
-//import org.json.JSONException;
-//import org.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -32,6 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -107,26 +109,33 @@ public final class SyncHelper {
         return attributes;
     }
 
-//    public static JSONObject parse(String in) throws JSONException {
-//        final Scanner s = new Scanner(in);
-//        final JSONObject o = new JSONObject(s.useDelimiter("\\A").next());
-//        s.close();
-//        return o;
-//    }
-//
-//    public static JSONObject parse(InputStream in) throws JSONException {
-//        final Scanner s = new Scanner(in);
-//        final JSONObject o = new JSONObject(s.useDelimiter("\\A").next());
-//        s.close();
-//        return o;
-//    }
-//
+    public static JSONObject parse(String in) throws JSONException {
+        final Scanner s = new Scanner(in);
+        final JSONObject o = new JSONObject(s.useDelimiter("\\A").next());
+        s.close();
+        return o;
+    }
+
+    public static JSONObject parse(InputStream in) throws JSONException {
+        final Scanner s = new Scanner(in);
+        final JSONObject o = new JSONObject(s.useDelimiter("\\A").next());
+        s.close();
+        return o;
+    }
+
 //    public static JSONObject parse(Reader in) throws JSONException {
 //        final Scanner s = new Scanner(in);
 //        final JSONObject o = new JSONObject(s.useDelimiter("\\A").next());
 //        s.close();
 //        return o;
 //    }
+
+    public static JSONArray parseJsonArray(InputStream in) throws JSONException {
+        final Scanner s = new Scanner(in);
+        final JSONArray o = new JSONArray(s.useDelimiter("\\A").next());
+        s.close();
+        return o;
+    }
 
     public static String readInputStream(InputStream in) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF8"));
