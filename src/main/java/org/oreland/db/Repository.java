@@ -57,6 +57,8 @@ public class Repository {
     }
 
     public void addTarget(Player p, TargetLevel level, Date date) {
+        if (level == null)
+            return;
         if (p.target_level == null || !p.target_level.equal(level)) {
             Player.LevelHistoryEntry entry = new Player.LevelHistoryEntry();
             entry.level = level;

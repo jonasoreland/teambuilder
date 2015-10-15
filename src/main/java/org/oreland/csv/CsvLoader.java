@@ -7,14 +7,21 @@ import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
 import org.oreland.entity.Player;
+import org.oreland.entity.TargetLevel;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -36,12 +43,16 @@ public class CsvLoader {
         return dir + "/" + "invitations.csv";
     }
 
+    public String getPlayersFilename() {
+        return dir + "/" + "players.csv";
+    }
+
     public String getLevelsFilename() {
         return dir + "/" + "levels.csv";
     }
 
     public void load(Repository repo) throws IOException, ParseException {
-        loadLevels(repo);
+        loadPlayers(repo);
         loadActivities(repo);
         loadInvitations(repo);
         loadParticipants(repo);
@@ -49,7 +60,7 @@ public class CsvLoader {
 
     public void save(Repository repo) throws IOException, ParseException {
         new File(dir).mkdirs();
-        saveLevels(repo);
+        savePlayers(repo);
         saveActivities(repo);
         saveInvitations(repo);
         saveParticipants(repo);
@@ -203,6 +214,66 @@ public class CsvLoader {
             List<String> rec = new ArrayList<>();
             rec.add(l.name);
             printer.printRecord(rec);
+        }
+        printer.close();
+    }
+
+    private void loadPlayers(Repository repo) throws IOException, ParseException {
+        File f = new File(getPlayersFilename());
+        if (!f.exists()) {
+            return;
+        }
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(
+                new FileReader(f.getAbsoluteFile()));
+        for (CSVRecord record : records) {
+            Player p = new Player();
+            p.first_name = record.get("first_name");
+            p.last_name = record.get("last_name");
+            p.type = Player.Type.parse(record.get("type"));
+            p = repo.add(p);
+            Date d = formatter.parse(record.get("date"));
+            TargetLevel level = TargetLevel.parseJson(repo, record.get("target"));
+            repo.addTarget(p, level, d);
+        }
+    }
+    private void savePlayers(Repository repo) throws IOException {
+        final Appendable out = new FileWriter(getPlayersFilename());
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("date", "first_name", "last_name", "type", "target").print(out);
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        Iterator<Player> players = repo.getPlayers();
+        while (players.hasNext()) {
+            Player p = players.next();
+            if (p.type != Player.Type.PLAYER)
+                continue;
+
+            if (p.level_history.isEmpty()) {
+                List<String> rec = new ArrayList<>();
+                rec.add(formatter.format(Calendar.getInstance().getTime()));
+                rec.add(p.first_name);
+                rec.add(p.last_name);
+                rec.add(p.type.toString());
+                rec.add("");
+                printer.printRecord(rec);
+            } else {
+                List<Player.LevelHistoryEntry> list = new ArrayList<>();
+                list.addAll(p.level_history);
+                Collections.sort(list, new Comparator<Player.LevelHistoryEntry>() {
+                    @Override
+                    public int compare(Player.LevelHistoryEntry p1, Player.LevelHistoryEntry p2) {
+                        return p1.date.compareTo(p2.date);
+                    }
+                });
+                for (Player.LevelHistoryEntry entry : list) {
+                    List<String> rec = new ArrayList<>();
+                    rec.add(formatter.format(entry.date));
+                    rec.add(p.first_name);
+                    rec.add(p.last_name);
+                    rec.add(p.type.toString());
+                    rec.add(entry.level.toJson());
+                    printer.printRecord(rec);
+                }
+            }
         }
         printer.close();
     }

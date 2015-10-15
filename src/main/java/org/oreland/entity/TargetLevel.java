@@ -33,6 +33,7 @@ public class TargetLevel {
                 Level level = Level.parseOrCreate(repo, name);
                 Distribution dist = target.getOrCreate(level);
                 dist.count += count;
+                target.distribution.add(dist);
             }
             return target;
         } catch (Exception ex) {
@@ -40,15 +41,22 @@ public class TargetLevel {
         return null;
     }
 
-    String toJson() {
-        return null;
+    public String toJson() {
+        JSONArray arr = new JSONArray();
+        for (Distribution d : distribution) {
+            JSONObject obj = new JSONObject();
+            obj.put(d.level.name, d.count);
+            arr.put(obj);
+        }
+        JSONObject obj2 = new JSONObject();
+        obj2.put("target", arr);
+        return obj2.toString();
     }
 
     public boolean equal(TargetLevel other) {
         if (distribution.size() != other.distribution.size())
             return false;
-        for (int i = 0; i < distribution.size(); i++) {
-            Distribution d = distribution.get(i);
+        for (Distribution d : distribution) {
             Distribution d2 = other.get(d.level);
             if (d2 == null || d.count != d2.count)
                 return false;
@@ -57,9 +65,9 @@ public class TargetLevel {
     }
 
     public Distribution get(Level l) {
-        for (int i = 0; i < distribution.size(); i++) {
-            if (distribution.get(i).level == l)
-                return distribution.get(i);
+        for (Distribution d : distribution) {
+            if (d.level == l)
+                return d;
         }
         return null;
     }
@@ -72,5 +80,18 @@ public class TargetLevel {
             d.count = 0;
         }
         return d;
+    }
+
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        str.append("[ ");
+        for (Distribution d : distribution) {
+            str.append(d.level);
+            str.append(":");
+            str.append(d.count);
+            str.append(" ");
+        }
+        str.append("]");
+        return str.toString();
     }
 }
