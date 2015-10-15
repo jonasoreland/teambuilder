@@ -28,7 +28,7 @@ public class TargetLevel {
             JSONArray arr = new JSONObject(str).getJSONArray("target");
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject obj = arr.getJSONObject(i);
-                String name = obj.keys().next();
+                String name = (String)obj.keys().next();
                 int count = obj.getInt(name);
                 Level level = Level.parseOrCreate(repo, name);
                 Distribution dist = target.getOrCreate(level);
