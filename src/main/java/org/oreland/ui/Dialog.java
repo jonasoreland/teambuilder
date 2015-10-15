@@ -16,13 +16,17 @@ public abstract class Dialog {
 
         public String stringResult;
         public int intResult;
-    };
+    }
+
+    ;
 
     public enum Type {
         Question,
         Choice,
         Range
-    };
+    }
+
+    ;
 
     public String prompt;
     public Type type;

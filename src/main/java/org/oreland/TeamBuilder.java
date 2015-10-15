@@ -12,7 +12,7 @@ import java.io.FileOutputStream;
 import java.util.Properties;
 
 public class TeamBuilder {
-    public static void main (String args[]) {
+    public static void main(String args[]) {
         System.out.println("Hello world");
         Properties prop = new Properties();
         try {

@@ -25,7 +25,9 @@ public class Activity {
         public String toString() {
             return name();
         }
-    };
+    }
+
+    ;
 
     public enum Response {
         YES,

@@ -33,6 +33,7 @@ public class Part<Value extends Writable> {
     public String getName() {
         return name;
     }
+
     public void setFilename(String filename) {
         this.filename = filename;
     }

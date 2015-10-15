@@ -22,9 +22,9 @@ public class Level {
 
         Level l = parse(repo, level);
         if (l == null) {
-          l = new Level();
-          l.name = level;
-          repo.addLevel(l);
+            l = new Level();
+            l.name = level;
+            repo.addLevel(l);
         }
         return l;
     }

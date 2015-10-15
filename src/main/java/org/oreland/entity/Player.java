@@ -11,7 +11,9 @@ public class Player {
     static public class LevelHistoryEntry {
         public Date date;
         public TargetLevel level;
-    };
+    }
+
+    ;
 
     public enum Type {
         PLAYER,
@@ -35,7 +37,9 @@ public class Player {
             }
             return null;
         }
-    };
+    }
+
+    ;
 
     public String first_name;
     public String last_name;
@@ -43,7 +47,9 @@ public class Player {
     public TargetLevel target_level;
     public List<LevelHistoryEntry> level_history = new ArrayList<>();
 
-    /** cross referenced **/
+    /**
+     * cross referenced
+     **/
     public List<Activity> games_played = new ArrayList<>();     // games played
     public List<Activity.Invitation> games_invited = new ArrayList<>();
 }

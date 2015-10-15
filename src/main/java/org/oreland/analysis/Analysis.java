@@ -18,7 +18,9 @@ public class Analysis {
 
     private abstract class Filter<T> {
         public abstract boolean OK(T t);
-    };
+    }
+
+    ;
 
     private int count(Iterator iterator) {
         int count = 0;
@@ -50,6 +52,7 @@ public class Analysis {
             this.all = all;
             this.filter = filter;
         }
+
         @Override
         public boolean hasNext() {
             next = getNext();
@@ -67,6 +70,7 @@ public class Analysis {
             }
             return getNext();
         }
+
         private T getNext() {
             while (true) {
                 if (!all.hasNext())
@@ -83,5 +87,7 @@ public class Analysis {
         public void remove() {
 
         }
-    };
+    }
+
+    ;
 }

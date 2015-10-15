@@ -32,14 +32,17 @@ public class Repository {
         return playersByName.values().iterator();
     }
 
-    public static class Pair<T,U> {
+    public static class Pair<T, U> {
         public Pair(T t, U u) {
             this.first = t;
             this.second = u;
         }
+
         public T first;
         public U second;
-    };
+    }
+
+    ;
 
     public Player add(Player p) {
         String key = p.first_name + p.last_name;
@@ -54,13 +57,13 @@ public class Repository {
     }
 
     public void addTarget(Player p, TargetLevel level, Date date) {
-      if (p.target_level == null || !p.target_level.equal(level)) {
-        Player.LevelHistoryEntry entry = new Player.LevelHistoryEntry();
-        entry.level = level;
-        entry.date = date;
-        p.target_level = level;
-        p.level_history.add(entry);
-      }
+        if (p.target_level == null || !p.target_level.equal(level)) {
+            Player.LevelHistoryEntry entry = new Player.LevelHistoryEntry();
+            entry.level = level;
+            entry.date = date;
+            p.target_level = level;
+            p.level_history.add(entry);
+        }
     }
 
     public Activity add(Activity game) {
@@ -186,6 +189,7 @@ public class Repository {
             part.player.games_played.add(activity);
         }
     }
+
     public void addInvitation(Activity activity, Activity.Invitation invitation) {
         if (!activity.invitations.contains(invitation)) {
             activity.invitations.add(invitation);

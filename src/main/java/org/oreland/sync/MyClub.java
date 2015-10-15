@@ -1,13 +1,11 @@
 package org.oreland.sync;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import org.json.JSONObject;
-import org.json.JSONArray;
-
 import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
@@ -83,7 +81,7 @@ public class MyClub extends DefaultSynchronizer {
         conn.addRequestProperty("Accept-Charset", CHARSET);
     }
 
-    public Status setup (Properties config, DialogBuilder builder) {
+    public Status setup(Properties config, DialogBuilder builder) {
         System.out.println("Login...");
         for (int i = 0; i < 3; i++) {
             Status s = connect();
@@ -113,7 +111,7 @@ public class MyClub extends DefaultSynchronizer {
                 config.setProperty("club", club);
             }
             System.out.println("Loading club");
-            doc = get(BASE_URL+config.getProperty("club"));
+            doc = get(BASE_URL + config.getProperty("club"));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
@@ -124,7 +122,7 @@ public class MyClub extends DefaultSynchronizer {
                 config.setProperty("section", club);
             }
             System.out.println("Loading section");
-            doc = get(BASE_URL+config.getProperty("section"));
+            doc = get(BASE_URL + config.getProperty("section"));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
@@ -133,11 +131,11 @@ public class MyClub extends DefaultSynchronizer {
             if (!config.containsKey("team")) {
                 String club = select("Select team: ", builder, BASE_URL, "a[href*=change_team]");
                 config.setProperty("team", club);
-                String teamno = club.substring(club.indexOf('=')+1);
+                String teamno = club.substring(club.indexOf('=') + 1);
                 config.setProperty("teamno", teamno);
             }
             System.out.println("Loading team");
-            doc = get(BASE_URL+config.getProperty("team"));
+            doc = get(BASE_URL + config.getProperty("team"));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
@@ -305,7 +303,7 @@ public class MyClub extends DefaultSynchronizer {
 
     HttpURLConnection send(String startUrl, HttpURLConnection conn) throws IOException {
         int status = conn.getResponseCode();
-    	if (status != HttpURLConnection.HTTP_OK) {
+        if (status != HttpURLConnection.HTTP_OK) {
             if (status == HttpURLConnection.HTTP_MOVED_TEMP
                     || status == HttpURLConnection.HTTP_MOVED_PERM
                     || status == HttpURLConnection.HTTP_SEE_OTHER) {
@@ -332,7 +330,7 @@ public class MyClub extends DefaultSynchronizer {
             String targetstr = o.optString(key);
             TargetLevel level = TargetLevel.parseJson(repo, targetstr);
             if (level != null) {
-              repo.addTarget(p, level, Calendar.getInstance().getTime());
+                repo.addTarget(p, level, Calendar.getInstance().getTime());
             }
         }
     }
@@ -418,8 +416,8 @@ public class MyClub extends DefaultSynchronizer {
         activity.participants.clear();
         Document doc = get(getParticipantsUrl(activity));
         String tables[] = new String[]{"participants_table", "leaders_table"};
-        Player.Type types[] = new Player.Type[]{ Player.Type.PLAYER, Player.Type.LEADER };
-        for (int i = 0; i < tables.length;  i++) {
+        Player.Type types[] = new Player.Type[]{Player.Type.PLAYER, Player.Type.LEADER};
+        for (int i = 0; i < tables.length; i++) {
             String key = tables[i];
             Element table = doc.select("table[id=" + key + "]").first().select("tbody").first();
             for (Element row : table.select("tr")) {
@@ -440,12 +438,13 @@ public class MyClub extends DefaultSynchronizer {
                 p.last_name = columns.get(1).text();
                 p.type = types[i];
                 if (repo.getPlayer(p.first_name, p.last_name) == null) {
-                  continue;
+                    continue;
                 }
                 repo.addParticipant(activity, p);
             }
         }
     }
+
     public void loadInvitations(Repository repo, Activity activity) throws IOException, ParseException {
         activity.invitations.clear();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:ss");
@@ -492,7 +491,7 @@ public class MyClub extends DefaultSynchronizer {
             p.last_name = columns.get(1).text();
             p.type = Player.Type.parse(columns.get(2).text());
             if (repo.getPlayer(p.first_name, p.last_name) == null) {
-              continue;
+                continue;
             }
             Activity.Invitation invitation = new Activity.Invitation();
             invitation.player = repo.add(p);

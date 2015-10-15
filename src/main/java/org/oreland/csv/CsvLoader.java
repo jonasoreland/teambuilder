@@ -23,14 +23,22 @@ import java.util.List;
 public class CsvLoader {
 
     String dir = "csv";
-    public String getActivitiesFilename() { return dir + "/" + "activities.csv"; }
+
+    public String getActivitiesFilename() {
+        return dir + "/" + "activities.csv";
+    }
+
     public String getParticipantsFilename() {
         return dir + "/" + "participants.csv";
     }
+
     public String getInvitationsFilename() {
         return dir + "/" + "invitations.csv";
     }
-    public String getLevelsFilename() { return dir + "/" + "levels.csv"; }
+
+    public String getLevelsFilename() {
+        return dir + "/" + "levels.csv";
+    }
 
     public void load(Repository repo) throws IOException, ParseException {
         loadLevels(repo);
@@ -182,7 +190,7 @@ public class CsvLoader {
         }
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(getLevelsFilename()));
         for (CSVRecord record : records) {
-            Level l =  new Level();
+            Level l = new Level();
             l.name = record.get("level");
             repo.addLevel(l);
         }

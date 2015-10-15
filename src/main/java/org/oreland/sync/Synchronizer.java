@@ -21,7 +21,7 @@ import java.util.Properties;
 
 public interface Synchronizer {
 
-    public enum RequestMethod { GET, POST, PATCH, PUT; }
+    public enum RequestMethod {GET, POST, PATCH, PUT;}
 
     enum AuthMethod {
         OAUTH2, USER_PASS
@@ -41,6 +41,7 @@ public interface Synchronizer {
 
     /**
      * read config
+     *
      * @param config
      */
     public void init(Properties config);
