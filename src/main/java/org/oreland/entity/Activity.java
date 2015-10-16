@@ -3,6 +3,7 @@ package org.oreland.entity;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.text.SimpleDateFormat;
 
 /**
  * Created by jonas on 10/4/15.
@@ -84,5 +85,14 @@ public class Activity {
         this.date = date;
         this.synced = false;
         this.type = type;
+    }
+
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+
+      sb.append(type);
+      sb.append(" ");
+      sb.append(new SimpleDateFormat("yyyy-MM-dd").format(date));
+      return sb.toString();
     }
 }

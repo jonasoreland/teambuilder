@@ -378,16 +378,16 @@ public class MyClub extends DefaultSynchronizer {
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.TRAINING));
             }
             if (activity != null && activity.type == Activity.Type.GAME && activity.level == null) {
-                System.err.println("Loading level for game " + activity.date);
+                System.err.println("Loading level for " + activity.toString());
                 loadActivityLevel(repo, activity);
             }
             if (activity != null && activity.synced == false && activity.date.before(limit)) {
-                System.err.println("Loading invitations/participants for game " + activity.date);
+                System.err.println("Loading invitations/participants for " + activity.toString());
                 loadInvitations(repo, activity);
                 loadParticipants(repo, activity);
                 if (activity.date.before(today)) {
                     if (columns.get(9).text().matches(".*[Gg]odk.*nd")) {
-                        System.out.println("" + activity.date + " is after " + today + " => synced");
+                        System.out.println(activity + " is complete.");
                         activity.synced = true;
                     }
                 }
