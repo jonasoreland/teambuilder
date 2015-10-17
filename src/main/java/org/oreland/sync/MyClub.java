@@ -142,6 +142,19 @@ public class MyClub extends DefaultSynchronizer {
         }
 
         try {
+            if (!config.containsKey("period")) {
+                // matches HT-2xxx and VT-2xxx
+                String period = select("Select period: ", builder, CALENDAR_URL, "a[href*=T-2]");
+                config.setProperty("period", period);
+            }
+            System.out.println("Loading period");
+            doc = get(BASE_URL + config.getProperty("period"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Status.ERROR;
+        }
+
+        try {
             if (!config.containsKey("Spelarinfo")) {
                 doc = get(PLAYER_URL + config.getProperty("teamno") + "/members/");
                 Element element = doc.select("p:contains(Spelarinformation) > *").first();
@@ -343,7 +356,7 @@ public class MyClub extends DefaultSynchronizer {
         c.add(Calendar.DAY_OF_YEAR, 8);
         Date limit = c.getTime();
 
-        Document doc = get(CALENDAR_URL);
+        Document doc = get(BASE_URL + config.getProperty("period"));
         Element table = doc.select("table[id=grid_activities_table]").first();
 //  0  <td>Tr?ning</td>
 //  1  <td><span class="hidden">20150930</span>30/09</td>
