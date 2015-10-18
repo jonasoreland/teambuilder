@@ -39,8 +39,7 @@ public class TeamBuilder {
         }
 
         Analysis analysis = new Analysis(repo);
-        int ungraded = analysis.countUngradedPlayers();
-        System.out.println("Found " + ungraded + " ungraded players");
+        analysis.report();
 
         // then save to file
         try {
