@@ -10,6 +10,18 @@ import java.text.SimpleDateFormat;
  */
 public class Activity {
 
+    public Activity copy() {
+        Activity a = new Activity();
+        a.id = id;
+        a.type = type;
+        a.date = date;
+        a.title = title;
+        a.description = description;
+        a.synced = synced;
+        a.level = level;
+        return a;
+    }
+
     public enum Type {
         GAME,
         TRAINING;

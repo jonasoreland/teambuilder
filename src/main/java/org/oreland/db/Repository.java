@@ -19,6 +19,32 @@ public class Repository {
     HashMap<String, Player> playersByName = new HashMap<>();
     List<Level> levels = new ArrayList<>();
 
+    // "Deep copy"
+    public Repository clone() {
+        Repository rep = new Repository();
+        for (Player p : playersByName.values()) {
+            rep.add(p.copy());  // shallow copy
+        }
+        for (Activity a : activities.values()) {
+            Activity new_a = a.copy();  // shallow copy
+            rep.add(new_a);
+            for (Activity.Invitation inv : a.invitations) {
+                Activity.Invitation new_inv = new Activity.Invitation();
+                new_inv.invitation_date = inv.invitation_date;
+                new_inv.player = rep.getPlayer(inv.player.first_name, inv.player.last_name);
+                new_inv.response = inv.response;
+                new_inv.response_comment = inv.response_comment;
+                new_inv.response_date = inv.response_date;
+                rep.addInvitation(new_a, new_inv);
+            }
+            for (Activity.Participant par : a.participants) {
+                Activity.Participant new_par = new Activity.Participant();
+                rep.addParticipant(new_a, rep.getPlayer(par.player.first_name, par.player.last_name));
+            }
+        }
+        return rep;
+    }
+
     public Iterable<Level> getLevels() {
         return levels;
     }
@@ -41,8 +67,6 @@ public class Repository {
         public T first;
         public U second;
     }
-
-    ;
 
     public Player add(Player p) {
         String key = p.first_name + p.last_name;

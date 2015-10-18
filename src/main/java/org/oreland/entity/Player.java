@@ -8,12 +8,22 @@ import java.util.List;
  * Created by jonas on 10/1/15.
  */
 public class Player {
+
+
+    public Player copy() {
+        Player p = new Player();
+        p.first_name = first_name;
+        p.last_name = last_name;
+        p.type = type;
+        p.level_history.addAll(level_history);
+        p.target_level = target_level;
+        return p;
+    }
+
     static public class LevelHistoryEntry {
         public Date date;
         public TargetLevel level;
     }
-
-    ;
 
     public enum Type {
         PLAYER,

@@ -6,6 +6,8 @@ import org.oreland.entity.Activity;
 import org.oreland.entity.Player;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -16,7 +18,12 @@ public class Analysis {
     Repository repo;
 
     public Analysis(Repository repo) {
-        this.repo = repo;
+        this.repo = repo.clone();
+        mergeSplitActivities();
+    }
+
+    private void mergeSplitActivities() {
+        HashMap<Date, Activity> activities = new HashMap<>();
     }
 
     public void report() {
