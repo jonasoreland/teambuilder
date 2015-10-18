@@ -1,5 +1,6 @@
 package org.oreland.analysis;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Player;
@@ -19,11 +20,13 @@ public class Analysis {
     }
 
     public void report() {
-        System.out.println("Barn per tr?ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerMatch()));
-        System.out.println("Barn per ledare tr?ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerLedare()));
-        System.out.println("Barn per ledare match: " + new Stat<Activity>().toString(getCompletedGames(), new BarnPerLedare()));
-        System.out.println("Match per Barn: " + new Stat<Player>().toString(getPlayers(), new MatchPerPlayer()));
-        System.out.println("Tr?ning per Barn: " + new Stat<Player>().toString(getPlayers(), new TrainingPerPlayer()));
+        System.out.println("Antal tr?ningar: " + count(getCompletedTraining()));
+        System.out.println("Barn per tr?ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerMatch(), false));
+        System.out.println("Barn per ledare tr?ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerLedare(), false));
+        System.out.println("Tr?ning per barn: " + new Stat<Player>().toString(getPlayers(), new TrainingPerPlayer(), true));
+        System.out.println("Antal matcher: " + count(getCompletedGames()));
+        System.out.println("Barn per ledare match: " + new Stat<Activity>().toString(getCompletedGames(), new BarnPerLedare(), false));
+        System.out.println("Match per barn: " + new Stat<Player>().toString(getPlayers(), new MatchPerPlayer(), true));
     }
 
     private abstract class Filter<T> {
@@ -35,8 +38,9 @@ public class Analysis {
     }
 
     public class Stat<T> {
-        public String toString(Iterator<T> iterator, Measure<T> measure) {
-            SummaryStatistics stat = new SummaryStatistics();
+        public String toString(Iterator<T> iterator, Measure<T> measure, boolean print_percent) {
+            DescriptiveStatistics stat = new DescriptiveStatistics();
+//            SummaryStatistics stat = new SummaryStatistics();
             while (iterator.hasNext()) {
                 T t = iterator.next();
                 stat.addValue(measure.getValue(t));
@@ -45,6 +49,18 @@ public class Analysis {
             sb.append("avg: " + String.format("%.2f", stat.getMean()));
             sb.append(" min/max: " + String.format("%.1f/%.1f", stat.getMin(),stat.getMax()));
             sb.append(" stdev: " + String.format("%.2f", stat.getStandardDeviation()));
+            if (print_percent) {
+                double percentil[] = new double[3];
+                double percent = 100.0 / (percentil.length + 1);
+                for (int i = 0; i < percentil.length; i++) {
+                    percentil[i] = stat.getPercentile((i + 1) * percent);
+                }
+                sb.append(" percentil: [ ");
+                for (int i = 0; i < percentil.length; i++) {
+                    sb.append(String.format(" %.1f", percentil[i]));
+                }
+                sb.append(" ]");
+            }
             return sb.toString();
         }
     };
