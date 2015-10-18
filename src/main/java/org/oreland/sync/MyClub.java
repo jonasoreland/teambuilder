@@ -399,7 +399,8 @@ public class MyClub extends DefaultSynchronizer {
                 loadInvitations(repo, activity);
                 loadParticipants(repo, activity);
                 if (activity.date.before(today)) {
-                    if (columns.get(9).text().matches(".*[Gg]odk.*nd")) {
+                    String status = columns.get(9).text();
+                    if (status.matches(".*[Gg]odk.*nd") || status.matches(".*Delvis godk.*")) {
                         System.out.println(activity + " is complete.");
                         activity.synced = true;
                     }
