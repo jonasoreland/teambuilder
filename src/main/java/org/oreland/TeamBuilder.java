@@ -13,14 +13,27 @@ import java.util.Properties;
 
 public class TeamBuilder {
     public static void main(String args[]) {
+        boolean load = true;
         boolean sync = true;
+        boolean save = true;
         for (int i = 0; i < args.length; i++) {
             String s = args[i];
-            if (s.startsWith("sync=")) {
-              sync = Boolean.parseBoolean(s.substring(s.indexOf('=')));
+            if (s.startsWith("load=")) {
+              load = Boolean.parseBoolean(s.substring(s.indexOf('=')+1));
+            } else if (s.startsWith("sync=")) {
+              sync = Boolean.parseBoolean(s.substring(s.indexOf('=')+1));
+            } else if (s.startsWith("save=")) {
+              save = Boolean.parseBoolean(s.substring(s.indexOf('=')+1));
+            } else  if (s.startsWith("resync=")) {
+              boolean resync = Boolean.parseBoolean(s.substring(s.indexOf('=')+1));
+              if (resync) {
+                sync = true;
+                load = false;
+                save = true;
+              }
             }
         }
-        System.out.println("Hello world, sync="+sync);
+        System.out.println("Hello world, load="+load+",sync="+sync+",save="+save);
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream("config.properties"));
@@ -31,7 +44,9 @@ public class TeamBuilder {
         CsvLoader csv = new CsvLoader();
         try {
             // first load from file
-            csv.load(repo);
+            if (load) {
+                csv.load(repo);
+            }
 
             // then load from web
             if (sync) {
@@ -49,10 +64,12 @@ public class TeamBuilder {
         analysis.report();
 
         // then save to file
-        try {
-            csv.save(repo);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (save) {
+            try {
+                csv.save(repo);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

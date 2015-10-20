@@ -117,9 +117,7 @@ public class CsvLoader {
             Activity.Invitation g = new Activity.Invitation();
             String game_id = record.get("game");
             Activity game = repo.getActivity(game_id);
-            Player p = new Player();
-            p.first_name = record.get("first_name");
-            p.last_name = record.get("last_name");
+            Player p = new Player(record.get("first_name"), record.get("last_name"));
             p.type = Player.Type.parse(record.get("type"));
             g.player = repo.add(p);
             if (!record.get("invitation_date").isEmpty())
@@ -172,9 +170,7 @@ public class CsvLoader {
             Activity.Participant g = new Activity.Participant();
             String game_id = record.get("game");
             Activity game = repo.getActivity(game_id);
-            Player p = new Player();
-            p.first_name = record.get("first_name");
-            p.last_name = record.get("last_name");
+            Player p = new Player(record.get("first_name"), record.get("last_name"));
             p.type = Player.Type.parse(record.get("type"));
             repo.addParticipant(game, p);
         }
@@ -227,10 +223,9 @@ public class CsvLoader {
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(
                 new FileReader(f.getAbsoluteFile()));
         for (CSVRecord record : records) {
-            Player p = new Player();
-            p.first_name = record.get("first_name");
-            p.last_name = record.get("last_name");
+            Player p = new Player(record.get("first_name"), record.get("last_name"));
             p.type = Player.Type.parse(record.get("type"));
+            p.guest = Boolean.parseBoolean(record.get("guest"));
             p = repo.add(p);
             Date d = formatter.parse(record.get("date"));
             TargetLevel level = TargetLevel.parseJson(repo, record.get("target"));
@@ -239,7 +234,7 @@ public class CsvLoader {
     }
     private void savePlayers(Repository repo) throws IOException {
         final Appendable out = new FileWriter(getPlayersFilename());
-        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("date", "first_name", "last_name", "type", "target").print(out);
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("date", "first_name", "last_name", "type", "guest", "target").print(out);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         Iterator<Player> players = repo.getPlayers();
         while (players.hasNext()) {
@@ -253,6 +248,7 @@ public class CsvLoader {
                 rec.add(p.first_name);
                 rec.add(p.last_name);
                 rec.add(p.type.toString());
+                rec.add(""+p.guest);
                 rec.add("");
                 printer.printRecord(rec);
             } else {
@@ -270,6 +266,7 @@ public class CsvLoader {
                     rec.add(p.first_name);
                     rec.add(p.last_name);
                     rec.add(p.type.toString());
+                    rec.add(""+p.guest);
                     rec.add(entry.level.toJson());
                     printer.printRecord(rec);
                 }

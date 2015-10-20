@@ -40,8 +40,6 @@ public class Activity {
         }
     }
 
-    ;
-
     public enum Response {
         YES,
         NO,

@@ -9,14 +9,18 @@ import java.util.List;
  */
 public class Player {
 
+    public Player(String first_name, String last_name) {
+      this.first_name = first_name.trim();
+      this.last_name = last_name.trim();
+      this.guest = false;
+    }
 
     public Player copy() {
-        Player p = new Player();
-        p.first_name = first_name;
-        p.last_name = last_name;
+        Player p = new Player(first_name, last_name);
         p.type = type;
         p.level_history.addAll(level_history);
         p.target_level = target_level;
+        p.guest = guest;
         return p;
     }
 
@@ -49,10 +53,9 @@ public class Player {
         }
     }
 
-    ;
-
     public String first_name;
     public String last_name;
+    public boolean guest;
     public Type type;
     public TargetLevel target_level;
     public List<LevelHistoryEntry> level_history = new ArrayList<>();

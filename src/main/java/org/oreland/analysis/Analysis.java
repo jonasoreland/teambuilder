@@ -21,6 +21,9 @@ public class Analysis {
 
     Repository repo;
 
+    public static final double LIMIT_VERY = 0.8;
+    public static final double LIMIT_LITTLE = 0.3;
+
     public Analysis(Repository repo) {
         this.repo = repo.clone();
         mergeSplitActivities();
@@ -84,13 +87,87 @@ public class Analysis {
     }
 
     public void report() {
-        System.out.println("Antal tr?ningar: " + count(getCompletedTraining()));
-        System.out.println("Barn per tr?ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerMatch(), false));
-        System.out.println("Barn per ledare tr?ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerLedare(), false));
-        System.out.println("Tr?ning per barn: " + new Stat<Player>().toString(getPlayers(), new TrainingPerPlayer(), true));
+        System.out.println("Antal träningar: " + count(getCompletedTraining()));
+        System.out.println("Barn per träning: " + new Stat<Activity>().toString(getCompletedTraining(), new PerMatch(Player.Type.PLAYER)));
+        System.out.println("Träning per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.TRAINING)));
         System.out.println("Antal matcher: " + count(getCompletedGames()));
-        System.out.println("Barn per ledare match: " + new Stat<Activity>().toString(getCompletedGames(), new BarnPerLedare(), false));
-        System.out.println("Match per barn: " + new Stat<Player>().toString(getPlayers(), new MatchPerPlayer(), true));
+        System.out.println("Match per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.GAME)));
+
+        System.out.println("Ledartäthet");
+        System.out.println("Barn per ledare match: " + new Stat<Activity>().toString(getCompletedGames(), new BarnPerLedare()));
+        System.out.println("Barn per ledare träning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerLedare()));
+
+        System.out.println("Segmentering >=" + (int)(100*LIMIT_VERY) +"% närvaro, <" + (int)(100*LIMIT_LITTLE) + "% närvaro");
+
+        // For Narvaro, if training has 0 invitations then everyone is invited
+        {
+          Iterator<Activity> it = getCompletedTraining();
+          while (it.hasNext()) {
+            Activity act = it.next();
+            if (countInvitedPlayers(act) == 0) {
+              Iterator<Player> it2 = getPlayers();
+              while (it2.hasNext()) {
+                Player p = it2.next();
+                Activity.Invitation inv = new Activity.Invitation();
+                inv.player = p;
+                repo.addInvitation(act, inv);
+              }
+            }
+          }
+        }
+
+        // For Narvaro, if player participated, player was also invited
+        {
+          Iterator<Player> it2 = getPlayers();
+          while (it2.hasNext()) {
+            Player p = it2.next();
+            for (Activity act : p.games_played) {
+              if (!was_invited(p, act)) {
+                Activity.Invitation inv = new Activity.Invitation();
+                inv.player = p;
+                repo.addInvitation(act, inv);
+              }
+            }
+          }
+        }
+
+        List<List<Player>> segment = new ArrayList<List<Player>>();
+        segment.add(new ArrayList<Player>());
+        segment.add(new ArrayList<Player>());
+        segment.add(new ArrayList<Player>());
+        {
+            Iterator<Player> it = getPlayers();
+            Measure<Player> narvaro = new Narvaro();
+            while (it.hasNext()) {
+              Player p = it.next();
+              double n = narvaro.getValue(p);
+              if (n >= LIMIT_VERY)
+                segment.get(0).add(p);
+              else if (n < LIMIT_LITTLE)
+                segment.get(2).add(p);
+              else
+                segment.get(1).add(p);
+            }
+        }
+
+        String names[] = new String[3];
+        names[0] = "Mycket intresserade";
+        names[1] = "Normal intresserade";
+        names[2] = "Lite intresserade";
+        for (int i = 0; i < segment.size(); i++) {
+          System.out.println(names[i] + ": " + segment.get(i).size() + " " + (int)(100*segment.get(i).size()/count(getPlayers())) +"%");
+          if (segment.get(i).size() == 0)
+            continue;
+          System.out.println("Match per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.GAME)));
+          System.out.println("Träning per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING)));}
+    }
+
+    boolean was_invited(Player p, Activity act) {
+      for (Activity.Invitation inv : act.invitations) {
+        if (inv.player == p)
+          return true;
+      }
+      return false;
     }
 
     private abstract class Filter<T> {
@@ -102,7 +179,7 @@ public class Analysis {
     }
 
     public class Stat<T> {
-        public String toString(Iterator<T> iterator, Measure<T> measure, boolean print_percent) {
+        public String toString(Iterator<T> iterator, Measure<T> measure) {
             DescriptiveStatistics stat = new DescriptiveStatistics();
 //            SummaryStatistics stat = new SummaryStatistics();
             while (iterator.hasNext()) {
@@ -113,18 +190,6 @@ public class Analysis {
             sb.append("avg: " + String.format("%.2f", stat.getMean()));
             sb.append(" min/max: " + String.format("%.1f/%.1f", stat.getMin(),stat.getMax()));
             sb.append(" stdev: " + String.format("%.2f", stat.getStandardDeviation()));
-            if (print_percent) {
-                double percentil[] = new double[3];
-                double percent = 100.0 / (percentil.length + 1);
-                for (int i = 0; i < percentil.length; i++) {
-                    percentil[i] = stat.getPercentile((i + 1) * percent);
-                }
-                sb.append(" percentil: [ ");
-                for (int i = 0; i < percentil.length; i++) {
-                    sb.append(String.format(" %.1f", percentil[i]));
-                }
-                sb.append(" ]");
-            }
             return sb.toString();
         }
     };
@@ -155,41 +220,51 @@ public class Analysis {
         }
     };
 
-    private class BarnPerMatch extends Measure<Activity> {
+    private class PerMatch extends Measure<Activity> {
+        Player.Type type;
+        public PerMatch(Player.Type type) {
+          this.type = type;
+        }
+
         @Override
         public double getValue(Activity act) {
-            double barn = 0;
+            double found = 0;
             for (Activity.Participant p : act.participants) {
-                if (p.player.type == Player.Type.PLAYER)
-                    barn++;
+                if (p.player.type == type)
+                    found++;
             }
-            return  barn;
+            return found;
         }
     };
 
-    private class MatchPerPlayer extends Measure<Player> {
+    private class PerPlayer extends Measure<Player> {
+        Activity.Type type;
+        public PerPlayer(Activity.Type type) {
+          this.type = type;
+        }
+
         @Override
         public double getValue(Player player) {
             double cnt = 0;
             for (Activity act : player.games_played) {
-                if (act.type == Activity.Type.GAME)
+                if (act.type == type)
                     cnt++;
             }
             return cnt;
         }
     };
 
-    private class TrainingPerPlayer extends Measure<Player> {
+    private class Narvaro extends Measure<Player> {
         @Override
         public double getValue(Player player) {
-            double cnt = 0;
-            for (Activity act : player.games_played) {
-                if (act.type == Activity.Type.TRAINING)
-                    cnt++;
-            }
-            return cnt;
+          double val = player.games_played.size();
+          if (player.games_invited.size() == 0)
+            return 0;
+
+          val /= player.games_invited.size();
+          return val;
         }
-    };
+    }
 
     public Iterator<Activity> getCompletedGames() {
         return new FilteredIterator<>(repo.getActivities().iterator(), new Filter<Activity>() {
@@ -209,13 +284,24 @@ public class Analysis {
         });
     }
 
+    public Filter<Player> PlayerFilter = new Filter<Player>() {
+        @Override
+        public boolean OK(Player player) {
+            return player.guest == false && player.type == Player.Type.PLAYER;
+        }
+    };
+
     public Iterator<Player> getPlayers() {
-        return new FilteredIterator<>(repo.getPlayers(), new Filter<Player>() {
-            @Override
-            public boolean OK(Player player) {
-                return player.type == Player.Type.PLAYER;
-            }
-        });
+        return new FilteredIterator<>(repo.getPlayers(), PlayerFilter);
+    }
+
+    public int countInvitedPlayers(Activity act) {
+        int count = 0;
+        for (Activity.Invitation inv : act.invitations) {
+          if (PlayerFilter.OK(inv.player))
+            count++;
+        }
+        return count;
     }
 
     public Iterator<Player> getUngradedPlayers() {

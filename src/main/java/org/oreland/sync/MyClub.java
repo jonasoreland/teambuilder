@@ -335,9 +335,7 @@ public class MyClub extends DefaultSynchronizer {
         JSONArray players = getJsonArray(PLAYER_URL + config.getProperty("teamno") + "/members/json");
         for (int i = 0; i < players.length(); i++) {
             JSONObject o = players.getJSONObject(i);
-            Player p = new Player();
-            p.first_name = o.getString("first_name");
-            p.last_name = o.getString("last_name");
+            Player p = new Player(o.getString("first_name"), o.getString("last_name"));
             p.type = o.getBoolean("is_leader") ? Player.Type.LEADER : Player.Type.PLAYER;
             p = repo.add(p);
             String targetstr = o.optString(key);
@@ -449,12 +447,11 @@ public class MyClub extends DefaultSynchronizer {
 // <td></td>
 // <td></td>
 // </tr>
-                Player p = new Player();
-                p.first_name = columns.get(0).text();
-                p.last_name = columns.get(1).text();
+                Player p = new Player(columns.get(0).text(), columns.get(1).text());
                 p.type = types[i];
                 if (repo.getPlayer(p.first_name, p.last_name) == null) {
-                    continue;
+                  // Player that participate but not's in player list is guests
+                  p.guest = true;
                 }
                 repo.addParticipant(activity, p);
             }
@@ -502,9 +499,7 @@ public class MyClub extends DefaultSynchronizer {
                 response_col = 6;
                 response_date_col = 7;
             }
-            Player p = new Player();
-            p.first_name = columns.get(0).text();
-            p.last_name = columns.get(1).text();
+            Player p = new Player(columns.get(0).text(), columns.get(1).text());
             p.type = Player.Type.parse(columns.get(2).text());
             if (repo.getPlayer(p.first_name, p.last_name) == null) {
                 continue;
