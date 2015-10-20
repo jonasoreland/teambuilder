@@ -24,13 +24,16 @@ public class Activity {
 
     public enum Type {
         GAME,
-        TRAINING;
+        TRAINING,
+        CUP;
 
         public static Type parse(String type) {
             if (type.matches("GAME"))
                 return GAME;
             else if (type.matches("TRAINING"))
                 return TRAINING;
+            else if (type.matches("CUP"))
+                return CUP;
             System.out.println("type: " + type + " => NULL");
             return null;
         }

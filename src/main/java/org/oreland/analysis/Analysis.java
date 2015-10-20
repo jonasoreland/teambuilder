@@ -26,6 +26,8 @@ public class Analysis {
 
     public Analysis(Repository repo) {
         this.repo = repo.clone();
+        // merge activities that has been artificially split
+        // to increase LOK...(e.g training same date/time)
         mergeSplitActivities();
     }
 
@@ -92,6 +94,7 @@ public class Analysis {
         System.out.println("Träning per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.TRAINING)));
         System.out.println("Antal matcher: " + count(getCompletedGames()));
         System.out.println("Match per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.GAME)));
+        System.out.println("Cup per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.CUP)));
 
         System.out.println("Ledartäthet");
         System.out.println("Barn per ledare match: " + new Stat<Activity>().toString(getCompletedGames(), new BarnPerLedare()));
@@ -159,7 +162,9 @@ public class Analysis {
           if (segment.get(i).size() == 0)
             continue;
           System.out.println("Match per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.GAME)));
-          System.out.println("Träning per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING)));}
+          System.out.println("Träning per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING)));
+          System.out.println("Cup per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.CUP)));
+        }
     }
 
     boolean was_invited(Player p, Activity act) {
