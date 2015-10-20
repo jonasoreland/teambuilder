@@ -40,19 +40,22 @@ public class Analysis {
                 return a1.date.compareTo(a2.date);
             }
         });
+
         List<Activity> merge = new ArrayList<>();
         List<Activity> remove = new ArrayList<>();
         for (Activity a : new_list) {
             if (merge.isEmpty())
                 merge.add(a);
-            if (a.mergeable(merge.iterator().next())) {
+            else if (a.mergeable(merge.iterator().next())) {
                 merge.add(a);
             } else {
-                if (merge.size() > 1) {
-                    merge(merge, remove);
-                }
+                merge(merge, remove);
                 merge.clear();
+                merge.add(a);
             }
+        }
+        if (!merge.isEmpty()) {
+            merge(merge, remove);
         }
         for (Activity a : remove) {
             repo.remove(a);
@@ -70,17 +73,14 @@ public class Analysis {
     }
 
     private void merge(Activity keep, Activity dup) {
-        System.out.println("Merge " + dup + " into " + keep);
         for (Activity.Invitation inv : dup.invitations) {
             inv.player.games_invited.remove(dup);
             repo.addInvitation(keep, inv);
         }
-        System.out.println("Merging " + dup + " into " + keep);
         for (Activity.Participant part : dup.participants) {
             part.player.games_played.remove(dup);
             repo.addParticipant(keep, part.player);
         }
-        System.out.println("Merged " + dup + " into " + keep);
     }
 
     public void report() {
