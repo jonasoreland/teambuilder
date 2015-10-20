@@ -6,9 +6,13 @@ import org.oreland.entity.Activity;
 import org.oreland.entity.Player;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by jonas on 10/10/15.
@@ -23,7 +27,60 @@ public class Analysis {
     }
 
     private void mergeSplitActivities() {
-        HashMap<Date, Activity> activities = new HashMap<>();
+        List<Activity> new_list = new ArrayList<>();
+        {
+            Iterator<Activity> a = getCompletedTraining();
+            while (a.hasNext()) {
+                new_list.add(a.next());
+            }
+        }
+        Collections.sort(new_list, new Comparator<Activity>() {
+            @Override
+            public int compare(Activity a1, Activity a2) {
+                return a1.date.compareTo(a2.date);
+            }
+        });
+        List<Activity> merge = new ArrayList<>();
+        List<Activity> remove = new ArrayList<>();
+        for (Activity a : new_list) {
+            if (merge.isEmpty())
+                merge.add(a);
+            if (a.mergeable(merge.iterator().next())) {
+                merge.add(a);
+            } else {
+                if (merge.size() > 1) {
+                    merge(merge, remove);
+                }
+                merge.clear();
+            }
+        }
+        for (Activity a : remove) {
+            repo.remove(a);
+        }
+    }
+
+    private void merge(List<Activity> merge, List<Activity> remove) {
+        Iterator<Activity> it = merge.iterator();
+        Activity keep = it.next();
+        while (it.hasNext()) {
+            Activity dup = it.next();
+            merge(keep, dup);
+            remove.add(dup);
+        }
+    }
+
+    private void merge(Activity keep, Activity dup) {
+        System.out.println("Merge " + dup + " into " + keep);
+        for (Activity.Invitation inv : dup.invitations) {
+            inv.player.games_invited.remove(dup);
+            repo.addInvitation(keep, inv);
+        }
+        System.out.println("Merging " + dup + " into " + keep);
+        for (Activity.Participant part : dup.participants) {
+            part.player.games_played.remove(dup);
+            repo.addParticipant(keep, part.player);
+        }
+        System.out.println("Merged " + dup + " into " + keep);
     }
 
     public void report() {

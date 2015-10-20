@@ -58,6 +58,10 @@ public class Repository {
         return playersByName.values().iterator();
     }
 
+    public void remove(Activity dup) {
+        activities.remove(dup.id);
+    }
+
     public static class Pair<T, U> {
         public Pair(T t, U u) {
             this.first = t;

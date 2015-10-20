@@ -83,6 +83,7 @@ public class Activity {
     public Date date;
     public String title;
     public String description;
+    public String time;
     public boolean synced;
     public Level level;
     public List<Invitation> invitations = new ArrayList<Invitation>();
@@ -107,4 +108,20 @@ public class Activity {
       sb.append(new SimpleDateFormat("yyyy-MM-dd").format(date));
       return sb.toString();
     }
+
+    public boolean mergeable(Activity a2) {
+        if (type != Type.TRAINING)
+            return false;
+        if (a2.type != Type.TRAINING)
+            return false;
+        if (date.compareTo(a2.date) != 0)
+            return false;
+        if (time != null && a2.time != null) {
+            if (!time.contentEquals(a2.time))
+                return false;
+        }
+        return true;
+    }
+
+
 }
