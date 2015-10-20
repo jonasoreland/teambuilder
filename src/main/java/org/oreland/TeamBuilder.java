@@ -13,7 +13,14 @@ import java.util.Properties;
 
 public class TeamBuilder {
     public static void main(String args[]) {
-        System.out.println("Hello world");
+        boolean sync = true;
+        for (int i = 0; i < args.length; i++) {
+            String s = args[i];
+            if (s.startsWith("sync=")) {
+              sync = Boolean.parseBoolean(s.substring(s.indexOf('=')));
+            }
+        }
+        System.out.println("Hello world, sync="+sync);
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream("config.properties"));
@@ -27,7 +34,7 @@ public class TeamBuilder {
             csv.load(repo);
 
             // then load from web
-            if (true) {
+            if (sync) {
                 myclub.init(prop);
                 myclub.setup(prop, new DialogBuilder());
                 prop.store(new FileOutputStream("config.properties"), null);
