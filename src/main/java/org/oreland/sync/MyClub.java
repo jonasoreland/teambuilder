@@ -377,23 +377,19 @@ public class MyClub extends DefaultSynchronizer {
                 continue;
             String type = columns.get(5).text();
             Activity activity = null;
+            String desc = columns.get(0).text();
+            String date = columns.get(1).text().substring(0, 8);
+            String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
             if (type.equals("Match")) {
-                String desc = columns.get(0).text();
-                String date = columns.get(1).text().substring(0, 8);
-                String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.GAME));
-                activity.time = columns.get(3).text().replace('\u00a0', ' ');
             } else if (type.matches("Tr.*ning")) {
-                String desc = columns.get(0).text();
-                String date = columns.get(1).text().substring(0, 8);
-                String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.TRAINING));
-                activity.time = columns.get(3).text().replace('\u00a0', ' ');
             } else if (type.matches("Cup")) {
-                String desc = columns.get(0).text();
-                String date = columns.get(1).text().substring(0, 8);
-                String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.CUP));
+            } else if (type.matches("F.*rfr.*gan")) {
+                activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.REQUEST));
+            }
+            if (activity != null) {
                 activity.time = columns.get(3).text().replace('\u00a0', ' ');
             }
 

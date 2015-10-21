@@ -25,7 +25,8 @@ public class Activity {
     public enum Type {
         GAME,
         TRAINING,
-        CUP;
+        CUP,
+        REQUEST;
 
         public static Type parse(String type) {
             if (type.matches("GAME"))
@@ -34,6 +35,8 @@ public class Activity {
                 return TRAINING;
             else if (type.matches("CUP"))
                 return CUP;
+            else if (type.matches("REQUEST"))
+                return REQUEST;
             System.out.println("type: " + type + " => NULL");
             return null;
         }
