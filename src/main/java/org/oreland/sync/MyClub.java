@@ -382,19 +382,19 @@ public class MyClub extends DefaultSynchronizer {
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.GAME));
-                activity.time = columns.get(3).text();
+                activity.time = columns.get(3).text().replace('\u00a0', ' ');
             } else if (type.matches("Tr.*ning")) {
                 String desc = columns.get(0).text();
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.TRAINING));
-                activity.time = columns.get(3).text();
+                activity.time = columns.get(3).text().replace('\u00a0', ' ');
             } else if (type.matches("Cup")) {
                 String desc = columns.get(0).text();
                 String date = columns.get(1).text().substring(0, 8);
                 String id = columns.get(7).select("a[href]").first().attr("href").replace("/activities/team/view_parts/", "").replace("/", "");
                 activity = repo.add(new Activity(id, formatter.parse(date), desc, Activity.Type.CUP));
-                activity.time = columns.get(3).text();
+                activity.time = columns.get(3).text().replace('\u00a0', ' ');
             }
 
             if (activity != null && (activity.type == Activity.Type.GAME || activity.type ==  Activity.Type.CUP) && activity.level == null) {

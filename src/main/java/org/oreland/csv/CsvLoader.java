@@ -78,6 +78,7 @@ public class CsvLoader {
             Activity g = new Activity();
             g.id = record.get("id");
             g.date = formatter.parse(record.get("date"));
+            g.time = record.get("time");
             g.title = record.get("title");
             g.type = Activity.Type.parse(record.get("type"));
             g.level = Level.parse(repo, record.get("level"));
@@ -88,12 +89,13 @@ public class CsvLoader {
 
     public void saveActivities(Repository repo) throws IOException {
         final Appendable out = new FileWriter(getActivitiesFilename());
-        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("id", "date", "title", "type", "level", "synced").print(out);
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("id", "date", "time", "title", "type", "level", "synced").print(out);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         for (Activity game : repo.getActivities()) {
             List<String> rec = new ArrayList<>();
             rec.add(game.id);
             rec.add(formatter.format(game.date));
+            rec.add(game.time);
             rec.add(game.title);
             rec.add(game.type.toString());
             if (game.level != null)
