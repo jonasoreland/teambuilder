@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class DialogBuilder {
 
     String question;
-    String multipleChoices[];
+    String choices[];
     Dialog.Type type = Dialog.Type.Question;
 
     public DialogBuilder() {
@@ -22,9 +22,9 @@ public class DialogBuilder {
         question = s;
     }
 
-    public void setMultipleChoices(String choices[]) {
+    public void setChoices(String choices[]) {
         type = Dialog.Type.Choice;
-        multipleChoices = choices;
+        choices = choices;
     }
 
     public Dialog build() {
@@ -32,17 +32,17 @@ public class DialogBuilder {
             case Question:
                 return new Question(question);
             case Choice:
-                return new MultiChoice(question, multipleChoices);
+                return new Choice(question, choices);
             case Range:
                 break;
         }
         return null;
     }
 
-    public void setMultipleChoices(List<String> choices) {
+    public void setChoices(List<String> choices) {
         String tmp[] = new String[choices.size()];
         choices.toArray(tmp);
-        setMultipleChoices(tmp);
+        setChoices(tmp);
     }
 }
 
@@ -66,18 +66,18 @@ class Question extends Dialog {
     }
 }
 
-class MultiChoice extends Dialog {
+class Choice extends Dialog {
 
-    public MultiChoice(String question, String[] multipleChoices) {
+    public Choice(String question, String[] choices) {
         super(Type.Choice, question);
-        this.multipleChoices = multipleChoices;
+        this.choices = choices;
     }
 
     @Override
     public Result show() {
         System.out.println(prompt);
         int pos = 1;
-        for (String s : multipleChoices) {
+        for (String s : choices) {
             System.out.println(pos + ") " + s);
             pos++;
         }

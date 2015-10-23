@@ -186,7 +186,7 @@ public class MyClub extends DefaultSynchronizer {
         }
 
         builder.setQuestion(prompt);
-        builder.setMultipleChoices(choices);
+        builder.setChoices(choices);
         Dialog.Result result = builder.build().show();
         return choiceValues.get(result.intResult - 1);
     }
