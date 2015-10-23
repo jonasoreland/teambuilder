@@ -3,6 +3,7 @@ package org.oreland.ui;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -84,6 +85,36 @@ class Choice extends Dialog {
         System.out.print("Select a number: ");
         Result result = Result.OK;
         result.intResult = new Scanner(System.in).nextInt();
+        return result;
+    }
+}
+
+class MultiChoice extends Dialog {
+
+    public MultiChoice(String question, String[] choices) {
+        super(Type.MultiChoice, question);
+        this.choices = choices;
+    }
+
+    @Override
+    public Result show() {
+        System.out.println(prompt);
+        int pos = 1;
+        for (String s : choices) {
+            System.out.println(pos + ") " + s);
+            pos++;
+        }
+        System.out.print("Choose items (separated by space): ");
+        Result result = Result.OK;
+        List<Integer> list = new ArrayList<Integer>();
+        Scanner scanner = new Scanner(System.in);
+        while (scanner.hasNextInt())
+            list.add(scanner.nextInt());
+        result.intResults = new int[list.size()];
+        pos = 0;
+        for (Integer i : list) {
+            result.intResults[pos++] = i;
+        }
         return result;
     }
 }
