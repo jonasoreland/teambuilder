@@ -14,6 +14,7 @@ public class DialogBuilder {
 
     String question;
     String choices[];
+    int minValue, maxValue;
     Dialog.Type type = Dialog.Type.Question;
 
     public DialogBuilder() {
@@ -25,7 +26,12 @@ public class DialogBuilder {
 
     public void setChoices(String choices[]) {
         type = Dialog.Type.Choice;
-        choices = choices;
+        this.choices = choices;
+    }
+
+    public void setMultiChoices(String choices[]) {
+        type = Dialog.Type.MultiChoice;
+        this.choices = choices;
     }
 
     public Dialog build() {
@@ -34,8 +40,10 @@ public class DialogBuilder {
                 return new Question(question);
             case Choice:
                 return new Choice(question, choices);
+            case MultiChoice:
+                return new MultiChoice(question, choices);
             case Range:
-                break;
+                return new Range(question, minValue, maxValue);
         }
         return null;
     }
@@ -44,6 +52,18 @@ public class DialogBuilder {
         String tmp[] = new String[choices.size()];
         choices.toArray(tmp);
         setChoices(tmp);
+    }
+
+    public void setMultiChoices(List<String> choices) {
+        String tmp[] = new String[choices.size()];
+        choices.toArray(tmp);
+        setMultiChoices(tmp);
+    }
+
+    public void setRange(int minValue, int maxValue) {
+        type = Dialog.Type.Range;
+        this.minValue = minValue;
+	this.maxValue = maxValue;
     }
 }
 
@@ -89,6 +109,26 @@ class Choice extends Dialog {
     }
 }
 
+class Range extends Dialog {
+
+    int minValue;
+    int maxValue;
+
+    public Range(String question, int minValue, int maxValue) {
+	super(Type.Range, question);
+        this.minValue = minValue;
+	this.maxValue = maxValue;
+    }
+
+    @Override
+    public Result show() {
+        System.out.println(prompt);
+        Result result = Result.OK;
+        result.intResult = new Scanner(System.in).nextInt();
+        return result;
+    }
+}
+
 class MultiChoice extends Dialog {
 
     public MultiChoice(String question, String[] choices) {
@@ -105,16 +145,23 @@ class MultiChoice extends Dialog {
             pos++;
         }
         System.out.print("Choose items (separated by space): ");
-        Result result = Result.OK;
-        List<Integer> list = new ArrayList<Integer>();
-        Scanner scanner = new Scanner(System.in);
-        while (scanner.hasNextInt())
-            list.add(scanner.nextInt());
-        result.intResults = new int[list.size()];
-        pos = 0;
-        for (Integer i : list) {
-            result.intResults[pos++] = i;
-        }
+        Result result = Result.CANCEL;
+	try {
+	    List<Integer> list = new ArrayList<Integer>();
+	    Scanner scanner = new Scanner(new BufferedReader(new InputStreamReader(System.in)).readLine());
+	    while (scanner.hasNextInt()) {
+		Integer i = scanner.nextInt();
+		list.add(i);
+	    }
+	    int res[] = new int[list.size()];
+	    pos = 0;
+	    for (Integer i : list) {
+		res[pos++] = i;
+	    }
+	    result = Result.OK;
+	    result.intResults = res;
+	} catch (Exception ex) {
+	}
         return result;
     }
 }

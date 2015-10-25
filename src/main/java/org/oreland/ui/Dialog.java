@@ -28,9 +28,6 @@ public abstract class Dialog {
 
     public String prompt;
     public Type type;
-
-    public int minValue;
-    public int maxValue;
     public String choices[];
 
     public abstract Result show();

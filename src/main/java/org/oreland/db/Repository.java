@@ -226,4 +226,18 @@ public class Repository {
             invitation.player.games_invited.add(invitation);
         }
     }
+
+    public List<Activity> selectActivities(Date startDate, Date endDate, Activity.Type type) {
+	List<Activity> res = new ArrayList<Activity>();
+	for (Activity act : getActivities()) {
+	    if (act.type != type)
+		continue;
+	    if (act.date.before(startDate))
+		continue;
+	    if (act.date.after(endDate))
+		continue;
+	    res.add(act);
+	}
+	return res;
+    }
 };

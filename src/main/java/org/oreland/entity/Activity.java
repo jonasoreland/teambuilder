@@ -19,6 +19,7 @@ public class Activity {
         a.description = description;
         a.synced = synced;
         a.level = level;
+	a.time = time;
         return a;
     }
 
