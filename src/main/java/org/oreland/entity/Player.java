@@ -10,9 +10,9 @@ import java.util.List;
 public class Player {
 
     public Player(String first_name, String last_name) {
-      this.first_name = first_name.trim();
-      this.last_name = last_name.trim();
-      this.guest = false;
+        this.first_name = first_name.trim();
+        this.last_name = last_name.trim();
+        this.guest = false;
     }
 
     public Player copy() {

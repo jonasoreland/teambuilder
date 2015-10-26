@@ -4,13 +4,10 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Player;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -89,49 +86,49 @@ public class Analysis {
     }
 
     public void report() {
-        System.out.println("Antal träningar: " + count(getCompletedTraining()));
-        System.out.println("Barn per träning: " + new Stat<Activity>().toString(getCompletedTraining(), new PerMatch(Player.Type.PLAYER)));
-        System.out.println("Träning per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.TRAINING)));
+        System.out.println("Antal tr??ningar: " + count(getCompletedTraining()));
+        System.out.println("Barn per tr??ning: " + new Stat<Activity>().toString(getCompletedTraining(), new PerMatch(Player.Type.PLAYER)));
+        System.out.println("Tr??ning per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.TRAINING)));
         System.out.println("Antal matcher: " + count(getCompletedGames()));
         System.out.println("Match per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.GAME)));
         System.out.println("Cup per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.CUP)));
 
-        System.out.println("Ledartäthet");
+        System.out.println("Ledart??thet");
         System.out.println("Barn per ledare match: " + new Stat<Activity>().toString(getCompletedGames(), new BarnPerLedare()));
-        System.out.println("Barn per ledare träning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerLedare()));
+        System.out.println("Barn per ledare tr??ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerLedare()));
 
-        System.out.println("Segmentering >=" + (int)(100*LIMIT_VERY) +"% närvaro, <" + (int)(100*LIMIT_LITTLE) + "% närvaro");
+        System.out.println("Segmentering >=" + (int) (100 * LIMIT_VERY) + "% n??rvaro, <" + (int) (100 * LIMIT_LITTLE) + "% n??rvaro");
 
         // For Narvaro, if training has 0 invitations then everyone is invited
         {
-          Iterator<Activity> it = getCompletedTraining();
-          while (it.hasNext()) {
-            Activity act = it.next();
-            if (countInvitedPlayers(act) == 0) {
-              Iterator<Player> it2 = getPlayers();
-              while (it2.hasNext()) {
-                Player p = it2.next();
-                Activity.Invitation inv = new Activity.Invitation();
-                inv.player = p;
-                repo.addInvitation(act, inv);
-              }
+            Iterator<Activity> it = getCompletedTraining();
+            while (it.hasNext()) {
+                Activity act = it.next();
+                if (countInvitedPlayers(act) == 0) {
+                    Iterator<Player> it2 = getPlayers();
+                    while (it2.hasNext()) {
+                        Player p = it2.next();
+                        Activity.Invitation inv = new Activity.Invitation();
+                        inv.player = p;
+                        repo.addInvitation(act, inv);
+                    }
+                }
             }
-          }
         }
 
         // For Narvaro, if player participated, player was also invited
         {
-          Iterator<Player> it2 = getPlayers();
-          while (it2.hasNext()) {
-            Player p = it2.next();
-            for (Activity act : p.games_played) {
-              if (!was_invited(p, act)) {
-                Activity.Invitation inv = new Activity.Invitation();
-                inv.player = p;
-                repo.addInvitation(act, inv);
-              }
+            Iterator<Player> it2 = getPlayers();
+            while (it2.hasNext()) {
+                Player p = it2.next();
+                for (Activity act : p.games_played) {
+                    if (!was_invited(p, act)) {
+                        Activity.Invitation inv = new Activity.Invitation();
+                        inv.player = p;
+                        repo.addInvitation(act, inv);
+                    }
+                }
             }
-          }
         }
 
         List<List<Player>> segment = new ArrayList<List<Player>>();
@@ -142,14 +139,14 @@ public class Analysis {
             Iterator<Player> it = getPlayers();
             Measure<Player> narvaro = new Narvaro();
             while (it.hasNext()) {
-              Player p = it.next();
-              double n = narvaro.getValue(p);
-              if (n >= LIMIT_VERY)
-                segment.get(0).add(p);
-              else if (n < LIMIT_LITTLE)
-                segment.get(2).add(p);
-              else
-                segment.get(1).add(p);
+                Player p = it.next();
+                double n = narvaro.getValue(p);
+                if (n >= LIMIT_VERY)
+                    segment.get(0).add(p);
+                else if (n < LIMIT_LITTLE)
+                    segment.get(2).add(p);
+                else
+                    segment.get(1).add(p);
             }
         }
 
@@ -158,21 +155,21 @@ public class Analysis {
         names[1] = "Normal intresserade";
         names[2] = "Lite intresserade";
         for (int i = 0; i < segment.size(); i++) {
-          System.out.println(names[i] + ": " + segment.get(i).size() + " " + (int)(100*segment.get(i).size()/count(getPlayers())) +"%");
-          if (segment.get(i).size() == 0)
-            continue;
-          System.out.println("Match per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.GAME)));
-          System.out.println("Träning per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING)));
-          System.out.println("Cup per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.CUP)));
+            System.out.println(names[i] + ": " + segment.get(i).size() + " " + (int) (100 * segment.get(i).size() / count(getPlayers())) + "%");
+            if (segment.get(i).size() == 0)
+                continue;
+            System.out.println("Match per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.GAME)));
+            System.out.println("Tr??ning per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING)));
+            System.out.println("Cup per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.CUP)));
         }
     }
 
     boolean was_invited(Player p, Activity act) {
-      for (Activity.Invitation inv : act.invitations) {
-        if (inv.player == p)
-          return true;
-      }
-      return false;
+        for (Activity.Invitation inv : act.invitations) {
+            if (inv.player == p)
+                return true;
+        }
+        return false;
     }
 
     private abstract class Filter<T> {
@@ -193,11 +190,13 @@ public class Analysis {
             }
             StringBuilder sb = new StringBuilder();
             sb.append("avg: " + String.format("%.2f", stat.getMean()));
-            sb.append(" min/max: " + String.format("%.1f/%.1f", stat.getMin(),stat.getMax()));
+            sb.append(" min/max: " + String.format("%.1f/%.1f", stat.getMin(), stat.getMax()));
             sb.append(" stdev: " + String.format("%.2f", stat.getStandardDeviation()));
             return sb.toString();
         }
-    };
+    }
+
+    ;
 
     private int count(Iterator iterator) {
         int count = 0;
@@ -221,14 +220,17 @@ public class Analysis {
                 if (p.player.type == Player.Type.PLAYER)
                     barn++;
             }
-            return  barn / ledare;
+            return barn / ledare;
         }
-    };
+    }
+
+    ;
 
     private class PerMatch extends Measure<Activity> {
         Player.Type type;
+
         public PerMatch(Player.Type type) {
-          this.type = type;
+            this.type = type;
         }
 
         @Override
@@ -240,12 +242,15 @@ public class Analysis {
             }
             return found;
         }
-    };
+    }
+
+    ;
 
     private class PerPlayer extends Measure<Player> {
         Activity.Type type;
+
         public PerPlayer(Activity.Type type) {
-          this.type = type;
+            this.type = type;
         }
 
         @Override
@@ -257,17 +262,19 @@ public class Analysis {
             }
             return cnt;
         }
-    };
+    }
+
+    ;
 
     private class Narvaro extends Measure<Player> {
         @Override
         public double getValue(Player player) {
-          double val = player.games_played.size();
-          if (player.games_invited.size() == 0)
-            return 0;
+            double val = player.games_played.size();
+            if (player.games_invited.size() == 0)
+                return 0;
 
-          val /= player.games_invited.size();
-          return val;
+            val /= player.games_invited.size();
+            return val;
         }
     }
 
@@ -303,8 +310,8 @@ public class Analysis {
     public int countInvitedPlayers(Activity act) {
         int count = 0;
         for (Activity.Invitation inv : act.invitations) {
-          if (PlayerFilter.OK(inv.player))
-            count++;
+            if (PlayerFilter.OK(inv.player))
+                count++;
         }
         return count;
     }

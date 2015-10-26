@@ -10,7 +10,6 @@ import org.oreland.entity.Player;
 import org.oreland.entity.TargetLevel;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -234,6 +233,7 @@ public class CsvLoader {
             repo.addTarget(p, level, d);
         }
     }
+
     private void savePlayers(Repository repo) throws IOException {
         final Appendable out = new FileWriter(getPlayersFilename());
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("date", "first_name", "last_name", "type", "guest", "target").print(out);
@@ -250,7 +250,7 @@ public class CsvLoader {
                 rec.add(p.first_name);
                 rec.add(p.last_name);
                 rec.add(p.type.toString());
-                rec.add(""+p.guest);
+                rec.add("" + p.guest);
                 rec.add("");
                 printer.printRecord(rec);
             } else {
@@ -268,7 +268,7 @@ public class CsvLoader {
                     rec.add(p.first_name);
                     rec.add(p.last_name);
                     rec.add(p.type.toString());
-                    rec.add(""+p.guest);
+                    rec.add("" + p.guest);
                     rec.add(entry.level.toJson());
                     printer.printRecord(rec);
                 }

@@ -393,7 +393,7 @@ public class MyClub extends DefaultSynchronizer {
                 activity.time = columns.get(3).text().replace('\u00a0', ' ');
             }
 
-            if (activity != null && (activity.type == Activity.Type.GAME || activity.type ==  Activity.Type.CUP) && activity.level == null) {
+            if (activity != null && (activity.type == Activity.Type.GAME || activity.type == Activity.Type.CUP) && activity.level == null) {
                 System.err.println("Loading level for " + activity.toString());
                 loadActivityLevel(repo, activity);
             }
@@ -453,8 +453,8 @@ public class MyClub extends DefaultSynchronizer {
                 Player p = new Player(columns.get(0).text(), columns.get(1).text());
                 p.type = types[i];
                 if (repo.getPlayer(p.first_name, p.last_name) == null) {
-                  // Player that participate but not's in player list is guests
-                  p.guest = true;
+                    // Player that participate but not's in player list is guests
+                    p.guest = true;
                 }
                 repo.addParticipant(activity, p);
             }

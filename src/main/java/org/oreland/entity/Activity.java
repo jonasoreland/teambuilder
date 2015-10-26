@@ -1,9 +1,9 @@
 package org.oreland.entity;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.text.SimpleDateFormat;
 
 /**
  * Created by jonas on 10/4/15.
@@ -19,7 +19,7 @@ public class Activity {
         a.description = description;
         a.synced = synced;
         a.level = level;
-	a.time = time;
+        a.time = time;
         return a;
     }
 
@@ -106,12 +106,12 @@ public class Activity {
     }
 
     public String toString() {
-      StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
 
-      sb.append(type);
-      sb.append(" ");
-      sb.append(new SimpleDateFormat("yyyy-MM-dd").format(date));
-      return sb.toString();
+        sb.append(type);
+        sb.append(" ");
+        sb.append(new SimpleDateFormat("yyyy-MM-dd").format(date));
+        return sb.toString();
     }
 
     public boolean mergeable(Activity a2) {

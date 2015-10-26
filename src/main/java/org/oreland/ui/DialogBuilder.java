@@ -63,7 +63,7 @@ public class DialogBuilder {
     public void setRange(int minValue, int maxValue) {
         type = Dialog.Type.Range;
         this.minValue = minValue;
-	this.maxValue = maxValue;
+        this.maxValue = maxValue;
     }
 }
 
@@ -115,9 +115,9 @@ class Range extends Dialog {
     int maxValue;
 
     public Range(String question, int minValue, int maxValue) {
-	super(Type.Range, question);
+        super(Type.Range, question);
         this.minValue = minValue;
-	this.maxValue = maxValue;
+        this.maxValue = maxValue;
     }
 
     @Override
@@ -146,22 +146,22 @@ class MultiChoice extends Dialog {
         }
         System.out.print("Choose items (separated by space): ");
         Result result = Result.CANCEL;
-	try {
-	    List<Integer> list = new ArrayList<Integer>();
-	    Scanner scanner = new Scanner(new BufferedReader(new InputStreamReader(System.in)).readLine());
-	    while (scanner.hasNextInt()) {
-		Integer i = scanner.nextInt();
-		list.add(i);
-	    }
-	    int res[] = new int[list.size()];
-	    pos = 0;
-	    for (Integer i : list) {
-		res[pos++] = i;
-	    }
-	    result = Result.OK;
-	    result.intResults = res;
-	} catch (Exception ex) {
-	}
+        try {
+            List<Integer> list = new ArrayList<Integer>();
+            Scanner scanner = new Scanner(new BufferedReader(new InputStreamReader(System.in)).readLine());
+            while (scanner.hasNextInt()) {
+                Integer i = scanner.nextInt();
+                list.add(i);
+            }
+            int res[] = new int[list.size()];
+            pos = 0;
+            for (Integer i : list) {
+                res[pos++] = i;
+            }
+            result = Result.OK;
+            result.intResults = res;
+        } catch (Exception ex) {
+        }
         return result;
     }
 }
