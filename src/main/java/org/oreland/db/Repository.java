@@ -1,5 +1,6 @@
 package org.oreland.db;
 
+import org.oreland.Pair;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
 import org.oreland.entity.Player;
@@ -60,16 +61,6 @@ public class Repository {
 
     public void remove(Activity dup) {
         activities.remove(dup.id);
-    }
-
-    public static class Pair<T, U> {
-        public Pair(T t, U u) {
-            this.first = t;
-            this.second = u;
-        }
-
-        public T first;
-        public U second;
     }
 
     public Player add(Player p) {

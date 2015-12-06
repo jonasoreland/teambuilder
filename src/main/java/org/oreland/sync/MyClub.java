@@ -6,6 +6,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.oreland.Pair;
 import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
@@ -81,7 +82,7 @@ public class MyClub extends DefaultSynchronizer {
         conn.addRequestProperty("Accept-Charset", CHARSET);
     }
 
-    public Status setup(Properties config, DialogBuilder builder) {
+    public Status login(Properties config, DialogBuilder builder) {
         System.out.println("Login...");
         for (int i = 0; i < 3; i++) {
             Status s = connect();
@@ -104,38 +105,43 @@ public class MyClub extends DefaultSynchronizer {
                 return s;
             }
         }
+        return Status.ERROR;
+    }
+
+    public Status setup(Properties config, DialogBuilder builder) {
+        login(config, builder);
         Document doc;
         try {
             if (!config.containsKey("club")) {
-                String club = select("Select club: ", builder, BASE_URL, "a[href*=change_club]");
-                config.setProperty("club", club);
+                Pair<String,String> club = select("Select club: ", builder, BASE_URL, "a[href*=change_club]");
+                config.setProperty("clubName", club.first);
+                config.setProperty("club", club.second);
             }
-            System.out.println("Loading club");
-            doc = get(BASE_URL + config.getProperty("club"));
+            setClubEx(config.getProperty("clubName"), config.getProperty("club"));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
         }
         try {
             if (!config.containsKey("section")) {
-                String club = select("Select section: ", builder, BASE_URL, "a[href*=change_section]");
-                config.setProperty("section", club);
+                Pair<String,String> section = select("Select section: ", builder, BASE_URL, "a[href*=change_section]");
+                config.setProperty("sectionName", section.first);
+                config.setProperty("section", section.second);
             }
-            System.out.println("Loading section");
-            doc = get(BASE_URL + config.getProperty("section"));
+            setSectionEx(config.getProperty("sectionName"), config.getProperty("section"));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
         }
         try {
             if (!config.containsKey("team")) {
-                String club = select("Select team: ", builder, BASE_URL, "a[href*=change_team]");
-                config.setProperty("team", club);
-                String teamno = club.substring(club.indexOf('=') + 1);
+                Pair<String,String> team = select("Select team: ", builder, BASE_URL, "a[href*=change_team]");
+                config.setProperty("teamName", team.first);
+                config.setProperty("team", team.second);
+                String teamno = team.second.substring(team.second.indexOf('=') + 1);
                 config.setProperty("teamno", teamno);
             }
-            System.out.println("Loading team");
-            doc = get(BASE_URL + config.getProperty("team"));
+            setTeamEx(config.getProperty("teamName"), config.getProperty("team"));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
@@ -144,11 +150,11 @@ public class MyClub extends DefaultSynchronizer {
         try {
             if (!config.containsKey("period")) {
                 // matches HT-2xxx and VT-2xxx
-                String period = select("Select period: ", builder, CALENDAR_URL, "a[href*=T-2]");
-                config.setProperty("period", period);
+                Pair<String,String> period = select("Select period: ", builder, CALENDAR_URL, "a[href*=T-2]");
+                config.setProperty("periodName", period.first);
+                config.setProperty("period", period.second);
             }
-            System.out.println("Loading period");
-            doc = get(BASE_URL + config.getProperty("period"));
+            setPeriodEx(config.getProperty("periodName"), config.getProperty("period"));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
@@ -170,7 +176,27 @@ public class MyClub extends DefaultSynchronizer {
         return Status.OK;
     }
 
-    private String select(String prompt, DialogBuilder builder, String baseUrl, String query) throws IOException {
+    public void setClubEx(String name, String key) throws IOException {
+        System.out.println("Loading club: " + name);
+        Document doc = get(BASE_URL + key);
+    }
+
+    public void setSectionEx(String name, String key) throws IOException {
+        System.out.println("Loading section: " + name);
+        Document doc = get(BASE_URL + key);
+    }
+
+    public void setTeamEx(String name, String key) throws IOException {
+        System.out.println("Loading team: " + name);
+        Document doc = get(BASE_URL + key);
+    }
+
+    public void setPeriodEx(String name, String key) throws IOException {
+        System.out.println("Loading period: " + name);
+        Document doc = get(BASE_URL + key);
+    }
+
+    private Pair<String, String> select(String prompt, DialogBuilder builder, String baseUrl, String query) throws IOException {
         Document doc = get(baseUrl);
         Set<String> values = new HashSet<>();
         List<String> choices = new ArrayList<>();
@@ -188,7 +214,33 @@ public class MyClub extends DefaultSynchronizer {
         builder.setQuestion(prompt);
         builder.setChoices(choices);
         Dialog.Result result = builder.build().show();
-        return choiceValues.get(result.intResult - 1);
+        return new Pair<>(choices.get(result.intResult - 1),
+                choiceValues.get(result.intResult - 1));
+    }
+
+    public List<Pair<String,String>> selectMulti(String prompt, DialogBuilder builder, String baseUrl, String query) throws IOException {
+        Document doc = get(baseUrl);
+        Set<String> values = new HashSet<>();
+        List<String> choices = new ArrayList<>();
+        List<String> choiceValues = new ArrayList<>();
+        for (Element e : doc.select(query)) {
+            String link = e.attr("href");
+            String value = e.text();
+            if (!values.contains(value)) {
+                values.add(value);
+                choices.add(value);
+                choiceValues.add(link);
+            }
+        }
+
+        builder.setQuestion(prompt);
+        builder.setChoices(choices);
+        Dialog.Result result = builder.build().show();
+        List<Pair<String, String>> returnValue = new ArrayList<>();
+        for (int res : result.intResults) {
+            returnValue.add(new Pair<String,String>(choices.get(res-1), choiceValues.get(res - 1)));
+        }
+        return returnValue;
     }
 
     private Document get(String baseUrl) throws IOException {

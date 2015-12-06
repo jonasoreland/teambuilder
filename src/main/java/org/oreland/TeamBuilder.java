@@ -12,6 +12,7 @@ import org.oreland.sync.MyClub;
 import org.oreland.ui.Dialog;
 import org.oreland.ui.DialogBuilder;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
@@ -25,9 +26,12 @@ import java.util.Properties;
 
 public class TeamBuilder {
     public static void main(String args[]) {
-        boolean load = true;
-        boolean sync = true;
-        boolean save = true;
+        boolean load = false;
+        boolean sync = false;
+        boolean save = false;
+        boolean plan = false;
+        boolean analyze = false;
+        boolean interactive = true;
         for (int i = 0; i < args.length; i++) {
             String s = args[i];
             if (s.startsWith("load=")) {
@@ -36,6 +40,12 @@ public class TeamBuilder {
                 sync = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
             } else if (s.startsWith("save=")) {
                 save = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
+            } else if (s.startsWith("plan=")) {
+                plan = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
+            } else if (s.startsWith("analyze=")) {
+                analyze = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
+            } else if (s.startsWith("interactive=")) {
+                interactive = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
             } else if (s.startsWith("resync=")) {
                 boolean resync = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
                 if (resync) {
@@ -45,15 +55,18 @@ public class TeamBuilder {
                 }
             }
         }
-        System.out.println("Hello world, load=" + load + ",sync=" + sync + ",save=" + save);
+        System.out.println("Hello world, load=" + load + ",sync=" + sync + ",save=" + save +",plan=" + plan);
         Properties prop = new Properties();
-        try {
-            prop.load(new FileInputStream("config.properties"));
-        } catch (Exception ex) {
-        }
         Repository repo = new Repository();
         MyClub myclub = new MyClub();
         CsvLoader csv = new CsvLoader();
+
+        try {
+            if (new File("config.properties").exists())
+                prop.load(new FileInputStream("config.properties"));
+        } catch (Exception ex) {
+        }
+
         try {
             // first load from file
             if (load) {
@@ -72,11 +85,15 @@ public class TeamBuilder {
             ex.printStackTrace();
         }
 
-        Analysis analysis = new Analysis(repo);
-        analysis.report();
+        if (analyze) {
+            Analysis analysis = new Analysis(repo);
+            analysis.report();
+        }
 
-        TeamBuilder builder = new TeamBuilder(repo);
-        builder.plan();
+        if (plan) {
+            TeamBuilder builder = new TeamBuilder(repo);
+            builder.plan();
+        }
 
         // then save to file
         if (save) {
@@ -85,6 +102,10 @@ public class TeamBuilder {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        if (interactive) {
+            new Interactive(prop, repo, myclub, csv).run();
         }
     }
 

@@ -3,6 +3,7 @@ package org.oreland.csv;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.oreland.Pair;
 import org.oreland.db.Repository;
 import org.oreland.entity.Activity;
 import org.oreland.entity.Level;
@@ -136,7 +137,7 @@ public class CsvLoader {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd HH:ss");
         final Appendable out = new FileWriter(dir + "/" + "invitations.csv");
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "type", "invitation_date", "response", "response_date", "response_comment").print(out);
-        for (Repository.Pair<Activity, Activity.Invitation> invitation : repo.getInvitations()) {
+        for (Pair<Activity, Activity.Invitation> invitation : repo.getInvitations()) {
             List<String> rec = new ArrayList<>();
             rec.add(invitation.first.id);
             rec.add(invitation.second.player.first_name);
@@ -180,7 +181,7 @@ public class CsvLoader {
     public void saveParticipants(Repository repo) throws ParseException, IOException {
         final Appendable out = new FileWriter(getParticipantsFilename());
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "type").print(out);
-        for (Repository.Pair<Activity, Activity.Participant> participant : repo.getParticipants()) {
+        for (Pair<Activity, Activity.Participant> participant : repo.getParticipants()) {
             List<String> rec = new ArrayList<>();
             rec.add(participant.first.id);
             rec.add(participant.second.player.first_name);
