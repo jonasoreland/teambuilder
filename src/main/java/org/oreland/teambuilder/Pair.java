@@ -1,4 +1,4 @@
-package org.oreland;
+package org.oreland.teambuilder;
 
 /**
  * Created by jonas on 12/6/15.

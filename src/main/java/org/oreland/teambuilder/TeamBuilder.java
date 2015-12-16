@@ -1,4 +1,4 @@
-package org.oreland;
+package org.oreland.teambuilder;
 
 
 import org.oreland.teambuilder.db.Repository;

@@ -1,6 +1,6 @@
 package org.oreland.teambuilder.db;
 
-import org.oreland.Pair;
+import org.oreland.teambuilder.Pair;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;

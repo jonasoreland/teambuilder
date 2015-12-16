@@ -6,7 +6,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.oreland.Pair;
+import org.oreland.teambuilder.Pair;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
