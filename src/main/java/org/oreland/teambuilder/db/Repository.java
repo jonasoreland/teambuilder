@@ -1,10 +1,10 @@
-package org.oreland.db;
+package org.oreland.teambuilder.db;
 
 import org.oreland.Pair;
-import org.oreland.entity.Activity;
-import org.oreland.entity.Level;
-import org.oreland.entity.Player;
-import org.oreland.entity.TargetLevel;
+import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Level;
+import org.oreland.teambuilder.entity.Player;
+import org.oreland.teambuilder.entity.TargetLevel;
 
 import java.util.ArrayList;
 import java.util.Date;

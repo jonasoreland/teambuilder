@@ -1,4 +1,4 @@
-package org.oreland.sync;
+package org.oreland.teambuilder.sync;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -7,15 +7,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.oreland.Pair;
-import org.oreland.db.Repository;
-import org.oreland.entity.Activity;
-import org.oreland.entity.Level;
-import org.oreland.entity.Player;
-import org.oreland.entity.TargetLevel;
-import org.oreland.sync.util.FormValues;
-import org.oreland.sync.util.SyncHelper;
-import org.oreland.ui.Dialog;
-import org.oreland.ui.DialogBuilder;
+import org.oreland.teambuilder.db.Repository;
+import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Level;
+import org.oreland.teambuilder.entity.Player;
+import org.oreland.teambuilder.entity.TargetLevel;
+import org.oreland.teambuilder.sync.util.FormValues;
+import org.oreland.teambuilder.sync.util.SyncHelper;
+import org.oreland.teambuilder.ui.Dialog;
+import org.oreland.teambuilder.ui.DialogBuilder;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;

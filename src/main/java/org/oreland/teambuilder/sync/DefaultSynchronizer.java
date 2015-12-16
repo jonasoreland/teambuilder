@@ -15,10 +15,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.oreland.sync;
+package org.oreland.teambuilder.sync;
 
-import org.oreland.sync.util.FormValues;
-import org.oreland.sync.util.SyncHelper;
+import org.oreland.teambuilder.sync.util.FormValues;
+import org.oreland.teambuilder.sync.util.SyncHelper;
 
 import java.io.BufferedReader;
 import java.io.IOException;

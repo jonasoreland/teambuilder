@@ -1,28 +1,19 @@
 package org.oreland;
 
-import org.oreland.csv.CsvLoader;
-import org.oreland.db.Repository;
-import org.oreland.sync.MyClub;
-import org.oreland.ui.Dialog;
-import org.oreland.ui.DialogBuilder;
+import org.oreland.teambuilder.ui.Dialog;
+import org.oreland.teambuilder.ui.DialogBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Created by jonas on 12/6/15.
  */
 public class Interactive {
-    Properties prop;
-    Repository repo;
-    MyClub myclub;
-    CsvLoader csv;
-    public Interactive(Properties prop, Repository repo, MyClub myclub, CsvLoader csv) {
-        this.prop = prop;
-        this.repo = repo;
-        this.myclub = myclub;
-        this.csv = csv;
+    Context ctx;
+
+    public Interactive(Context ctx) {
+        this.ctx = ctx;
     }
 
     public void run() {
@@ -45,6 +36,5 @@ public class Interactive {
     }
 
     public void statistics() {
-
     }
 }

@@ -1,20 +1,14 @@
 package org.oreland;
 
 
-import org.oreland.analysis.Analysis;
-import org.oreland.csv.CsvLoader;
-import org.oreland.db.Repository;
-import org.oreland.entity.Activity;
-import org.oreland.entity.Level;
-import org.oreland.entity.Player;
-import org.oreland.entity.TargetLevel;
-import org.oreland.sync.MyClub;
-import org.oreland.ui.Dialog;
-import org.oreland.ui.DialogBuilder;
+import org.oreland.teambuilder.db.Repository;
+import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Level;
+import org.oreland.teambuilder.entity.Player;
+import org.oreland.teambuilder.entity.TargetLevel;
+import org.oreland.teambuilder.ui.Dialog;
+import org.oreland.teambuilder.ui.DialogBuilder;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -22,92 +16,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 
 public class TeamBuilder {
-    public static void main(String args[]) {
-        boolean load = false;
-        boolean sync = false;
-        boolean save = false;
-        boolean plan = false;
-        boolean analyze = false;
-        boolean interactive = true;
-        for (int i = 0; i < args.length; i++) {
-            String s = args[i];
-            if (s.startsWith("load=")) {
-                load = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
-            } else if (s.startsWith("sync=")) {
-                sync = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
-            } else if (s.startsWith("save=")) {
-                save = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
-            } else if (s.startsWith("plan=")) {
-                plan = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
-            } else if (s.startsWith("analyze=")) {
-                analyze = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
-            } else if (s.startsWith("interactive=")) {
-                interactive = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
-            } else if (s.startsWith("resync=")) {
-                boolean resync = Boolean.parseBoolean(s.substring(s.indexOf('=') + 1));
-                if (resync) {
-                    sync = true;
-                    load = false;
-                    save = true;
-                }
-            }
-        }
-        System.out.println("Hello world, load=" + load + ",sync=" + sync + ",save=" + save +",plan=" + plan);
-        Properties prop = new Properties();
-        Repository repo = new Repository();
-        MyClub myclub = new MyClub();
-        CsvLoader csv = new CsvLoader();
-
-        try {
-            if (new File("config.properties").exists())
-                prop.load(new FileInputStream("config.properties"));
-        } catch (Exception ex) {
-        }
-
-        try {
-            // first load from file
-            if (load) {
-                csv.load(repo);
-            }
-
-            // then load from web
-            if (sync) {
-                myclub.init(prop);
-                myclub.setup(prop, new DialogBuilder());
-                prop.store(new FileOutputStream("config.properties"), null);
-                myclub.loadPlayers(repo);
-                myclub.loadActivities(repo);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        if (analyze) {
-            Analysis analysis = new Analysis(repo);
-            analysis.report();
-        }
-
-        if (plan) {
-            TeamBuilder builder = new TeamBuilder(repo);
-            builder.plan();
-        }
-
-        // then save to file
-        if (save) {
-            try {
-                csv.save(repo);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        if (interactive) {
-            new Interactive(prop, repo, myclub, csv).run();
-        }
-    }
 
     final Repository repo;
 

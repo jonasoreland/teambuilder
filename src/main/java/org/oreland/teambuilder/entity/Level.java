@@ -1,6 +1,6 @@
-package org.oreland.entity;
+package org.oreland.teambuilder.entity;
 
-import org.oreland.db.Repository;
+import org.oreland.teambuilder.db.Repository;
 
 import java.util.HashSet;
 import java.util.Set;

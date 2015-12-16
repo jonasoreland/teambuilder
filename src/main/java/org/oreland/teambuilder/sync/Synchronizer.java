@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.oreland.sync;
+package org.oreland.teambuilder.sync;
 
 import java.util.Properties;
 

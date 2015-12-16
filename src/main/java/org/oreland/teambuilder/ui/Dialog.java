@@ -1,4 +1,4 @@
-package org.oreland.ui;
+package org.oreland.teambuilder.ui;
 
 /**
  * Created by jonas on 10/4/15.

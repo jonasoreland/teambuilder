@@ -1,4 +1,4 @@
-package org.oreland.entity;
+package org.oreland.teambuilder.entity;
 
 import java.util.ArrayList;
 import java.util.Date;

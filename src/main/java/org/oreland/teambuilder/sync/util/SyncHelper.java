@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.oreland.sync.util;
+package org.oreland.teambuilder.sync.util;
 
 import org.json.JSONArray;
 import org.json.JSONException;

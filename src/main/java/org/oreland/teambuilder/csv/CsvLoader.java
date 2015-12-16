@@ -1,14 +1,15 @@
-package org.oreland.csv;
+package org.oreland.teambuilder.csv;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.oreland.Context;
 import org.oreland.Pair;
-import org.oreland.db.Repository;
-import org.oreland.entity.Activity;
-import org.oreland.entity.Level;
-import org.oreland.entity.Player;
-import org.oreland.entity.TargetLevel;
+import org.oreland.teambuilder.db.Repository;
+import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Level;
+import org.oreland.teambuilder.entity.Player;
+import org.oreland.teambuilder.entity.TargetLevel;
 
 import java.io.File;
 import java.io.FileReader;
@@ -29,7 +30,21 @@ import java.util.List;
  */
 public class CsvLoader {
 
-    String dir = "csv";
+    String dir;
+
+    public void changeDir(Context ctx) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ctx.wd);
+        sb.append(File.pathSeparatorChar);
+        sb.append("csv");
+        sb.append(File.pathSeparatorChar);
+        sb.append(ctx.prop.getProperty("sectionName"));
+        sb.append(File.pathSeparatorChar);
+        sb.append(ctx.prop.getProperty("teamName"));
+        sb.append(File.pathSeparatorChar);
+        sb.append(ctx.prop.getProperty("periodName"));
+        dir = sb.toString();
+    }
 
     public String getActivitiesFilename() {
         return dir + "/" + "activities.csv";

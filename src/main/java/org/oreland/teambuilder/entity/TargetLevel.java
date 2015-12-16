@@ -1,8 +1,8 @@
-package org.oreland.entity;
+package org.oreland.teambuilder.entity;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.oreland.db.Repository;
+import org.oreland.teambuilder.db.Repository;
 
 import java.util.ArrayList;
 import java.util.List;

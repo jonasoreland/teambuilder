@@ -1,9 +1,9 @@
-package org.oreland.analysis;
+package org.oreland.teambuilder.analysis;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.oreland.db.Repository;
-import org.oreland.entity.Activity;
-import org.oreland.entity.Player;
+import org.oreland.teambuilder.db.Repository;
+import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
