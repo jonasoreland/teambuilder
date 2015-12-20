@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Created by jonas on 10/5/15.
@@ -35,13 +36,13 @@ public class CsvLoader {
     public void changeDir(Context ctx) {
         StringBuilder sb = new StringBuilder();
         sb.append(ctx.wd);
-        sb.append(File.pathSeparatorChar);
+        sb.append(File.separatorChar);
         sb.append("csv");
-        sb.append(File.pathSeparatorChar);
+        sb.append(File.separatorChar);
         sb.append(ctx.prop.getProperty("sectionName"));
-        sb.append(File.pathSeparatorChar);
+        sb.append(File.separatorChar);
         sb.append(ctx.prop.getProperty("teamName"));
-        sb.append(File.pathSeparatorChar);
+        sb.append(File.separatorChar);
         sb.append(ctx.prop.getProperty("periodName"));
         dir = sb.toString();
     }
@@ -66,19 +67,21 @@ public class CsvLoader {
         return dir + "/" + "levels.csv";
     }
 
-    public void load(Repository repo) throws IOException, ParseException {
-        loadPlayers(repo);
-        loadActivities(repo);
-        loadInvitations(repo);
-        loadParticipants(repo);
+    public void load(Context ctx) throws IOException, ParseException {
+        changeDir(ctx);
+        loadPlayers(ctx.repo);
+        loadActivities(ctx.repo);
+        loadInvitations(ctx.repo);
+        loadParticipants(ctx.repo);
     }
 
-    public void save(Repository repo) throws IOException, ParseException {
+    public void save(Context ctx) throws IOException, ParseException {
+        changeDir(ctx);
         new File(dir).mkdirs();
-        savePlayers(repo);
-        saveActivities(repo);
-        saveInvitations(repo);
-        saveParticipants(repo);
+        savePlayers(ctx.repo);
+        saveActivities(ctx.repo);
+        saveInvitations(ctx.repo);
+        saveParticipants(ctx.repo);
     }
 
     public void loadActivities(Repository repo) throws ParseException, IOException {

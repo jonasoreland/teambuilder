@@ -53,7 +53,7 @@ public class Main {
         try {
             // first load from file
             if (load) {
-                ctx.csv.load(ctx.repo);
+                ctx.csv.load(ctx);
             }
 
             // then load from web
@@ -81,7 +81,7 @@ public class Main {
         // then save to file
         if (save) {
             try {
-                ctx.csv.save(ctx.repo);
+                ctx.csv.save(ctx);
             } catch (Exception e) {
                 e.printStackTrace();
             }
