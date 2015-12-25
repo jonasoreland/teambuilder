@@ -17,6 +17,11 @@
 
 package org.oreland.teambuilder.sync;
 
+import org.oreland.teambuilder.Context;
+import org.oreland.teambuilder.Pair;
+
+import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
 
 public interface Synchronizer {
@@ -61,4 +66,31 @@ public interface Synchronizer {
      * @return
      */
     public void logout();
+
+    class Specifier {
+        public String name;
+        String key;
+
+        public Specifier(String name, String key) {
+            this.name = name;
+            this.key = key;
+        }
+
+        public boolean isValid() {
+            return name != null && key != null;
+        }
+    };
+
+    public List<Specifier> listSections(Context ctx) throws Exception;
+    public List<Specifier> listTeams(Context ctx) throws Exception;
+    public List<Specifier> listPeriods(Context ctx) throws Exception;
+
+    public void setSection(Context ctx, Specifier section) throws Exception;
+    public Specifier getCurrentSection(Context ctx);
+
+    public void setTeam(Context ctx, Specifier team) throws Exception;
+    public Specifier getCurrentTeam(Context ctx);
+
+    public void setPeriod(Context ctx, Specifier period) throws Exception;
+    public Specifier getCurrentPeriod(Context ctx);
 }

@@ -6,6 +6,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.oreland.teambuilder.Context;
 import org.oreland.teambuilder.Pair;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
@@ -48,6 +49,19 @@ public class MyClub extends DefaultSynchronizer {
     public static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
     public static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit_info/";
     public static final String PLAYER_URL = BASE_URL + "/ut/team/";
+
+    public static final String CLUB_NAME = "clubName";
+    public static final String CLUB_KEY = "club";
+
+    public static final String SECTION_NAME = "sectionName";
+    public static final String SECTION_KEY = "section";
+
+    public static final String TEAM_NAME = "teamName";
+    public static final String TEAM_KEY = "team";
+    public static final String TEAM_NO = "teamno";
+
+    public static final String PERIOD_NAME = "periodName";
+    public static final String PERIOD_KEY = "period";
 
     long id = 0;
     private String username = null;
@@ -108,53 +122,48 @@ public class MyClub extends DefaultSynchronizer {
         return Status.ERROR;
     }
 
-    public Status setup(Properties config, DialogBuilder builder) {
+    public Status setup(Context ctx, Properties config, DialogBuilder builder) {
         login(config, builder);
         Document doc;
         try {
-            if (!config.containsKey("club")) {
-                Pair<String,String> club = select("Select club: ", builder, BASE_URL, "a[href*=change_club]");
-                config.setProperty("clubName", club.first);
-                config.setProperty("club", club.second);
+            if (!config.containsKey(CLUB_KEY)) {
+                Specifier club = select("Select club: ", builder, BASE_URL, "a[href*=change_club]");
+                config.setProperty(CLUB_NAME, club.name);
+                config.setProperty(CLUB_KEY, club.key);
             }
-            setClubEx(config.getProperty("clubName"), config.getProperty("club"));
+            setClubEx(new Specifier(config.getProperty(CLUB_NAME), config.getProperty(CLUB_KEY)));
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
         }
         try {
-            if (!config.containsKey("section")) {
-                Pair<String,String> section = select("Select section: ", builder, BASE_URL, "a[href*=change_section]");
-                config.setProperty("sectionName", section.first);
-                config.setProperty("section", section.second);
+            Specifier section = getCurrentSection(ctx);
+            if (section == null) {
+                section = select("Select section: ", builder, BASE_URL, "a[href*=change_section]");
             }
-            setSectionEx(config.getProperty("sectionName"), config.getProperty("section"));
+            setSection(ctx, section);
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
         }
         try {
-            if (!config.containsKey("team")) {
-                Pair<String,String> team = select("Select team: ", builder, BASE_URL, "a[href*=change_team]");
-                config.setProperty("teamName", team.first);
-                config.setProperty("team", team.second);
-                String teamno = team.second.substring(team.second.indexOf('=') + 1);
-                config.setProperty("teamno", teamno);
+            Specifier team = getCurrentTeam(ctx);
+            if (team == null) {
+                team = select("Select team: ", builder, BASE_URL, "a[href*=change_team]");
             }
-            setTeamEx(config.getProperty("teamName"), config.getProperty("team"));
+            setTeam(ctx, team);
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
         }
 
         try {
-            if (!config.containsKey("period")) {
+            Specifier period = getCurrentPeriod(ctx);
+            if (period == null) {
                 // matches HT-2xxx and VT-2xxx
-                Pair<String,String> period = select("Select period: ", builder, CALENDAR_URL, "a[href*=T-2]");
-                config.setProperty("periodName", period.first);
-                config.setProperty("period", period.second);
+                period = select("Select period: ", builder, CALENDAR_URL, "a[href*=T-2]");
             }
-            setPeriodEx(config.getProperty("periodName"), config.getProperty("period"));
+            setPeriod(ctx, period);
         } catch (IOException e) {
             e.printStackTrace();
             return Status.ERROR;
@@ -176,27 +185,42 @@ public class MyClub extends DefaultSynchronizer {
         return Status.OK;
     }
 
-    public void setClubEx(String name, String key) throws IOException {
-        System.out.println("Loading club: " + name);
-        Document doc = get(BASE_URL + key);
+    public void setClubEx(Specifier club) throws IOException {
+        System.out.println("Loading club: " + club.name);
+        Document doc = get(BASE_URL + club.key);
     }
 
-    public void setSectionEx(String name, String key) throws IOException {
-        System.out.println("Loading section: " + name);
-        Document doc = get(BASE_URL + key);
+    public void setSectionEx(Specifier section) throws IOException {
+        System.out.println("Loading section: " + section.name);
+        Document doc = get(BASE_URL + section.key);
     }
 
-    public void setTeamEx(String name, String key) throws IOException {
-        System.out.println("Loading team: " + name);
-        Document doc = get(BASE_URL + key);
+    public void setTeamEx(Specifier team) throws IOException {
+        System.out.println("Loading team: " + team.name);
+        Document doc = get(BASE_URL + team.key);
     }
 
-    public void setPeriodEx(String name, String key) throws IOException {
-        System.out.println("Loading period: " + name);
-        Document doc = get(BASE_URL + key);
+    public void setPeriodEx(Specifier period) throws IOException {
+        System.out.println("Loading period: " + period.name);
+        Document doc = get(BASE_URL + period.key);
     }
 
-    private Pair<String, String> select(String prompt, DialogBuilder builder, String baseUrl, String query) throws IOException {
+    public List<Specifier> list(String baseUrl, String query) throws IOException {
+        Document doc = get(baseUrl);
+        Set<String> values = new HashSet<>();
+        List<Specifier> list = new ArrayList<>();
+        for (Element e : doc.select(query)) {
+            String link = e.attr("href");
+            String value = e.text();
+            if (!values.contains(value)) {
+                values.add(value);
+                list.add(new Specifier(value, link));
+            }
+        }
+        return list;
+    }
+
+    private Specifier select(String prompt, DialogBuilder builder, String baseUrl, String query) throws IOException {
         Document doc = get(baseUrl);
         Set<String> values = new HashSet<>();
         List<String> choices = new ArrayList<>();
@@ -214,11 +238,11 @@ public class MyClub extends DefaultSynchronizer {
         builder.setQuestion(prompt);
         builder.setChoices(choices);
         Dialog.Result result = builder.build().show();
-        return new Pair<>(choices.get(result.intResult - 1),
+        return new Specifier(choices.get(result.intResult - 1),
                 choiceValues.get(result.intResult - 1));
     }
 
-    public List<Pair<String,String>> selectMulti(String prompt, DialogBuilder builder, String baseUrl, String query) throws IOException {
+    public List<Specifier> selectMulti(String prompt, DialogBuilder builder, String baseUrl, String query) throws IOException {
         Document doc = get(baseUrl);
         Set<String> values = new HashSet<>();
         List<String> choices = new ArrayList<>();
@@ -236,9 +260,9 @@ public class MyClub extends DefaultSynchronizer {
         builder.setQuestion(prompt);
         builder.setChoices(choices);
         Dialog.Result result = builder.build().show();
-        List<Pair<String, String>> returnValue = new ArrayList<>();
+        List<Specifier> returnValue = new ArrayList<>();
         for (int res : result.intResults) {
-            returnValue.add(new Pair<String,String>(choices.get(res-1), choiceValues.get(res - 1)));
+            returnValue.add(new Specifier(choices.get(res-1), choiceValues.get(res - 1)));
         }
         return returnValue;
     }
@@ -599,4 +623,68 @@ public class MyClub extends DefaultSynchronizer {
         authToken = null;
         super.logout();
     }
+
+    public List<Specifier> listSections(Context ctx) throws IOException {
+        return list(BASE_URL, "a[href*=change_section]");
+    }
+
+    @Override
+    public List<Specifier> listTeams(Context ctx) throws Exception {
+        return list(BASE_URL, "a[href*=change_team]");
+    }
+
+    @Override
+    public List<Specifier> listPeriods(Context ctx) throws Exception {
+        return list(CALENDAR_URL, "a[href*=T-2]");
+    }
+
+    @Override
+    public void setSection(Context ctx, Specifier section) throws IOException {
+        setSectionEx(section);
+        setSpecifier(ctx, SECTION_NAME, SECTION_KEY, section);
+    }
+
+    @Override
+    public Specifier getCurrentSection(Context ctx) {
+        return getSpecifier(ctx, SECTION_NAME, SECTION_KEY);
+    }
+
+    @Override
+    public void setTeam(Context ctx, Specifier team) throws IOException {
+        setTeamEx(team);
+        String teamno = team.key.substring(team.key.indexOf('=') + 1);
+        ctx.prop.setProperty(TEAM_NO, teamno);
+        setSpecifier(ctx, TEAM_NAME, TEAM_KEY, team);
+    }
+
+    @Override
+    public Specifier getCurrentTeam(Context ctx) {
+        return getSpecifier(ctx, TEAM_NAME, TEAM_KEY);
+    }
+
+    @Override
+    public void setPeriod(Context ctx, Specifier period) throws IOException {
+        setPeriodEx(period);
+        setSpecifier(ctx, PERIOD_NAME, PERIOD_KEY, period);
+    }
+
+    @Override
+    public Specifier getCurrentPeriod(Context ctx) {
+        return getSpecifier(ctx, PERIOD_NAME, PERIOD_KEY);
+    }
+
+    private Specifier getSpecifier(Context ctx, String name, String key) {
+        if (ctx.prop.contains(name) && ctx.prop.contains(key)) {
+            return new Specifier(ctx.prop.getProperty(name),
+                    ctx.prop.getProperty(key));
+        }
+        return null;
+    }
+    private void setSpecifier(Context ctx, String sectionName, String sectionKey, Specifier section) {
+        if (section.isValid()) {
+            ctx.prop.setProperty(sectionName, section.name);
+            ctx.prop.setProperty(sectionKey, section.key);
+        }
+    }
+
 }

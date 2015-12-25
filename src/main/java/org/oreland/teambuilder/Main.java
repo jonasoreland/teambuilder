@@ -59,7 +59,7 @@ public class Main {
             // then load from web
             if (sync) {
                 ctx.myclub.init(ctx.prop);
-                ctx.myclub.setup(ctx.prop, new DialogBuilder());
+                ctx.myclub.setup(ctx, ctx.prop, new DialogBuilder());
                 ctx.prop.store(new FileOutputStream("config.properties"), null);
                 ctx.myclub.loadPlayers(ctx.repo);
                 ctx.myclub.loadActivities(ctx.repo);

@@ -10,11 +10,15 @@ import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
+import org.oreland.teambuilder.sync.Synchronizer;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,16 +33,25 @@ import java.util.Properties;
 /**
  * Created by jonas on 10/5/15.
  */
-public class CsvLoader {
+public class CsvLoader implements Synchronizer {
 
     String dir;
+    String section;
+    String team;
+    String period;
 
-    public void changeDir(Context ctx) {
+    public String getBaseDir(Context ctx) {
         StringBuilder sb = new StringBuilder();
         sb.append(ctx.wd);
         sb.append(File.separatorChar);
         sb.append("csv");
         sb.append(File.separatorChar);
+        return sb.toString();
+    }
+
+    public void changeDir(Context ctx) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getBaseDir(ctx));
         sb.append(ctx.prop.getProperty("sectionName"));
         sb.append(File.separatorChar);
         sb.append(ctx.prop.getProperty("teamName"));
@@ -82,6 +95,112 @@ public class CsvLoader {
         saveActivities(ctx.repo);
         saveInvitations(ctx.repo);
         saveParticipants(ctx.repo);
+    }
+
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public void init(Properties config) {
+
+    }
+
+    @Override
+    public void reset() {
+
+    }
+
+    @Override
+    public Status connect() {
+        return Status.OK;
+    }
+
+    @Override
+    public void logout() {
+
+    }
+
+    @Override
+    public List<Specifier> listSections(Context ctx) {
+        List<Specifier> list = new ArrayList<>();
+        try {
+            String path = getBaseDir(ctx);
+            for (Path file : Files.newDirectoryStream(Paths.get(path))) {
+                if (new File(file.toString()).isDirectory())
+                    list.add(new Specifier(file.toString(), "key"));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public void setSection(Context ctx, Specifier section) throws Exception {
+        this.section = section.name;
+    }
+
+    @Override
+    public Specifier getCurrentSection(Context ctx) {
+        if (this.section != null)
+            return new Specifier(this.section, "key");
+        return null;
+    }
+
+    @Override
+    public void setTeam(Context ctx, Specifier team) throws Exception {
+        this.team = team.name;
+    }
+
+    @Override
+    public Specifier getCurrentTeam(Context ctx) {
+        if (this.team != null)
+            return new Specifier(this.team, "key");
+        return null;
+    }
+
+    @Override
+    public void setPeriod(Context ctx, Specifier period) throws Exception {
+        this.period = period.name;
+    }
+
+    @Override
+    public Specifier getCurrentPeriod(Context ctx) {
+        if (this.period != null)
+            return new Specifier(this.period, "key");
+        return null;
+    }
+
+    @Override
+    public List<Specifier> listTeams(Context ctx) {
+        List<Specifier> list = new ArrayList<>();
+        try {
+            String path = getBaseDir(ctx) + section + File.separatorChar;
+            for (Path file : Files.newDirectoryStream(Paths.get(path))) {
+                if (new File(file.toString()).isDirectory())
+                    list.add(new Specifier(file.toString(), "key"));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public List<Specifier> listPeriods(Context ctx) {
+        List<Specifier> list = new ArrayList<>();
+        try {
+            String path = getBaseDir(ctx) + section + File.separatorChar + team + File.separatorChar;
+            for (Path file : Files.newDirectoryStream(Paths.get(path))) {
+                if (new File(file.toString()).isDirectory())
+                    list.add(new Specifier(file.toString(), "key"));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     public void loadActivities(Repository repo) throws ParseException, IOException {
