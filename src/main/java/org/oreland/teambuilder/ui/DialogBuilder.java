@@ -1,11 +1,17 @@
 package org.oreland.teambuilder.ui;
 
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.oreland.teambuilder.sync.Synchronizer;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  * Created by jonas on 10/4/15.
@@ -64,6 +70,47 @@ public class DialogBuilder {
         type = Dialog.Type.Range;
         this.minValue = minValue;
         this.maxValue = maxValue;
+    }
+
+    public static Synchronizer.Specifier selectOne(DialogBuilder builder,
+                                                   String prompt, List<Synchronizer.Specifier> choices) {
+        Set<String> valueset = new HashSet<>();
+        List<String> names = new ArrayList<>();
+        List<String> values = new ArrayList<>();
+        for (Synchronizer.Specifier e : choices) {
+            if (!valueset.contains(e.key)) {
+                valueset.add(e.key);
+                names.add(e.name);
+                values.add(e.key);
+            }
+        }
+
+        builder.setQuestion(prompt);
+        builder.setChoices(names);
+        Dialog.Result result = builder.build().show();
+        return choices.get(result.intResult - 1);
+    }
+
+    static public List<Synchronizer.Specifier> selectMulti(DialogBuilder builder, String prompt, List<Synchronizer.Specifier> choices) {
+        Set<String> valueset = new HashSet<>();
+        List<String> names = new ArrayList<>();
+        List<String> values = new ArrayList<>();
+        for (Synchronizer.Specifier e : choices) {
+            if (!valueset.contains(e.key)) {
+                valueset.add(e.key);
+                names.add(e.name);
+                values.add(e.key);
+            }
+        }
+
+        builder.setQuestion(prompt);
+        builder.setChoices(names);
+        Dialog.Result result = builder.build().show();
+        List<Synchronizer.Specifier> returnValue = new ArrayList<>();
+        for (int res : result.intResults) {
+            returnValue.add(choices.get(res - 1));
+        }
+        return returnValue;
     }
 }
 

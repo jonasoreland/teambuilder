@@ -129,7 +129,7 @@ public class CsvLoader implements Synchronizer {
             String path = getBaseDir(ctx);
             for (Path file : Files.newDirectoryStream(Paths.get(path))) {
                 if (new File(file.toString()).isDirectory())
-                    list.add(new Specifier(file.toString(), "key"));
+                    list.add(new Specifier(file.getFileName().toString(), file.toString()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -145,7 +145,7 @@ public class CsvLoader implements Synchronizer {
     @Override
     public Specifier getCurrentSection(Context ctx) {
         if (this.section != null)
-            return new Specifier(this.section, "key");
+            return new Specifier(this.section);
         return null;
     }
 
@@ -157,7 +157,7 @@ public class CsvLoader implements Synchronizer {
     @Override
     public Specifier getCurrentTeam(Context ctx) {
         if (this.team != null)
-            return new Specifier(this.team, "key");
+            return new Specifier(this.team);
         return null;
     }
 
@@ -169,7 +169,7 @@ public class CsvLoader implements Synchronizer {
     @Override
     public Specifier getCurrentPeriod(Context ctx) {
         if (this.period != null)
-            return new Specifier(this.period, "key");
+            return new Specifier(this.period);
         return null;
     }
 
@@ -180,7 +180,7 @@ public class CsvLoader implements Synchronizer {
             String path = getBaseDir(ctx) + section + File.separatorChar;
             for (Path file : Files.newDirectoryStream(Paths.get(path))) {
                 if (new File(file.toString()).isDirectory())
-                    list.add(new Specifier(file.toString(), "key"));
+                    list.add(new Specifier(file.getFileName().toString(), file.toString()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -195,7 +195,7 @@ public class CsvLoader implements Synchronizer {
             String path = getBaseDir(ctx) + section + File.separatorChar + team + File.separatorChar;
             for (Path file : Files.newDirectoryStream(Paths.get(path))) {
                 if (new File(file.toString()).isDirectory())
-                    list.add(new Specifier(file.toString(), "key"));
+                    list.add(new Specifier(file.getFileName().toString(), file.toString()));
             }
         } catch (IOException e) {
             e.printStackTrace();

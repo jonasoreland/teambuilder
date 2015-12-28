@@ -69,11 +69,16 @@ public interface Synchronizer {
 
     class Specifier {
         public String name;
-        String key;
+        public String key;
 
         public Specifier(String name, String key) {
             this.name = name;
             this.key = key;
+        }
+
+        public Specifier(String s) {
+            this.name = s;
+            this.key = s;
         }
 
         public boolean isValid() {
