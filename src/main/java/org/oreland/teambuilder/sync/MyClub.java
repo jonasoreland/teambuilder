@@ -67,7 +67,6 @@ public class MyClub extends DefaultSynchronizer {
     private String username = null;
     private String password = null;
     private String authToken = null;
-    private Properties config = null;
 
     @Override
     public String getName() {
@@ -124,6 +123,23 @@ public class MyClub extends DefaultSynchronizer {
 
     public Status setup(Context ctx, Properties config, DialogBuilder builder) {
         login(config, builder);
+        Status s;
+        if ((s = setupClub(ctx, config, builder)) != Status.OK)
+            return s;
+
+        if ((s = setupSection(ctx, config, builder)) != Status.OK)
+            return s;
+
+        if ((s = setupTeam(ctx, config, builder)) != Status.OK)
+            return s;
+
+        if ((s = setupPeriod(ctx, config, builder)) != Status.OK)
+            return s;
+
+        return Status.OK;
+    }
+
+    public Status setupClub(Context ctx, Properties config, DialogBuilder builder) {
         Document doc;
         try {
             if (!config.containsKey(CLUB_KEY)) {
@@ -136,6 +152,11 @@ public class MyClub extends DefaultSynchronizer {
             e.printStackTrace();
             return Status.ERROR;
         }
+        return Status.OK;
+    }
+
+    public Status setupSection(Context ctx, Properties config, DialogBuilder builder) {
+        Document doc;
         try {
             Specifier section = getCurrentSection(ctx);
             if (section == null) {
@@ -146,6 +167,11 @@ public class MyClub extends DefaultSynchronizer {
             e.printStackTrace();
             return Status.ERROR;
         }
+        return Status.OK;
+    }
+
+    public Status setupTeam(Context ctx, Properties config, DialogBuilder builder) {
+        Document doc;
         try {
             Specifier team = getCurrentTeam(ctx);
             if (team == null) {
@@ -156,7 +182,11 @@ public class MyClub extends DefaultSynchronizer {
             e.printStackTrace();
             return Status.ERROR;
         }
+        return Status.OK;
+    }
 
+    public Status setupPeriod(Context ctx, Properties config, DialogBuilder builder) {
+        Document doc;
         try {
             Specifier period = getCurrentPeriod(ctx);
             if (period == null) {
@@ -168,7 +198,11 @@ public class MyClub extends DefaultSynchronizer {
             e.printStackTrace();
             return Status.ERROR;
         }
+        return Status.OK;
+    }
 
+    public Status setupSpelarinfo(Context ctx, Properties config, DialogBuilder builder) {
+        Document doc;
         try {
             if (!config.containsKey("Spelarinfo")) {
                 doc = get(PLAYER_URL + config.getProperty("teamno") + "/members/");
@@ -180,8 +214,6 @@ public class MyClub extends DefaultSynchronizer {
             e.printStackTrace();
             return Status.ERROR;
         }
-
-        this.config = config;
         return Status.OK;
     }
 
@@ -405,24 +437,24 @@ public class MyClub extends DefaultSynchronizer {
         return conn;
     }
 
-    public void loadPlayers(Repository repo) throws IOException {
+    public void loadPlayers(Context ctx) throws IOException {
         System.out.println("Load player list");
-        String key = config.getProperty("Spelarinfo");
-        JSONArray players = getJsonArray(PLAYER_URL + config.getProperty("teamno") + "/members/json");
+        String key = ctx.prop.getProperty("Spelarinfo");
+        JSONArray players = getJsonArray(PLAYER_URL + ctx.prop.getProperty("teamno") + "/members/json");
         for (int i = 0; i < players.length(); i++) {
             JSONObject o = players.getJSONObject(i);
             Player p = new Player(o.getString("first_name"), o.getString("last_name"));
             p.type = o.getBoolean("is_leader") ? Player.Type.LEADER : Player.Type.PLAYER;
-            p = repo.add(p);
+            p = ctx.repo.add(p);
             String targetstr = o.optString(key);
-            TargetLevel level = TargetLevel.parseJson(repo, targetstr);
+            TargetLevel level = TargetLevel.parseJson(ctx.repo, targetstr);
             if (level != null) {
-                repo.addTarget(p, level, Calendar.getInstance().getTime());
+                ctx.repo.addTarget(p, level, Calendar.getInstance().getTime());
             }
         }
     }
 
-    public void loadActivities(Repository repo) throws IOException, ParseException {
+    public void loadActivities(Context ctx) throws IOException, ParseException {
         System.out.println("Load activities list");
         Calendar c = Calendar.getInstance();
         c.add(Calendar.DAY_OF_YEAR, -1);
@@ -430,7 +462,10 @@ public class MyClub extends DefaultSynchronizer {
         c.add(Calendar.DAY_OF_YEAR, 8);
         Date limit = c.getTime();
 
-        Document doc = get(BASE_URL + config.getProperty("period"));
+        // alias
+        Repository repo = ctx.repo;
+
+        Document doc = get(BASE_URL + getCurrentPeriod(ctx).key);
         Element table = doc.select("table[id=grid_activities_table]").first();
 //  0  <td>Tr?ning</td>
 //  1  <td><span class="hidden">20150930</span>30/09</td>
