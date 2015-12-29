@@ -11,7 +11,7 @@ import java.io.FileOutputStream;
  * Created by jonas on 12/16/15.
  */
 public class Main {
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
         boolean load = false;
         boolean sync = false;
         boolean save = false;

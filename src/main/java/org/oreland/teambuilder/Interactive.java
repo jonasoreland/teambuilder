@@ -1,6 +1,7 @@
 package org.oreland.teambuilder;
 
 import org.oreland.teambuilder.sync.Synchronizer;
+import org.oreland.teambuilder.sync.Synchronizer.Specifier;
 import org.oreland.teambuilder.ui.Dialog;
 import org.oreland.teambuilder.ui.DialogBuilder;
 
@@ -17,7 +18,7 @@ public class Interactive {
         this.ctx = ctx;
     }
 
-    public void run() {
+    public void run() throws Exception {
         while (true) {
             DialogBuilder builder = ctx.builder;
             builder.setQuestion("Choose function");
@@ -43,8 +44,18 @@ public class Interactive {
     private void synchronize() {
     }
 
-    private void statistics() {
-        Synchronizer.Specifier section = DialogBuilder.selectOne(ctx.builder,
+    private void statistics() throws Exception {
+        Specifier section = DialogBuilder.selectOne(ctx.builder,
                 "Select section", ctx.csv.listSections(ctx));
+        ctx.csv.setSection(ctx, section);
+        List<Specifier> teams = DialogBuilder.selectMulti(ctx.builder,
+                "Select teams", ctx.csv.listTeams(ctx), true);
+        List<Specifier> allperiods = new ArrayList<>();
+        for (Specifier team : teams) {
+            ctx.csv.setTeam(ctx, team);
+            allperiods.addAll(ctx.csv.listPeriods(ctx));
+        }
+        List<Specifier> periods = DialogBuilder.selectMulti(ctx.builder,
+                "Select periods", allperiods, true);
     }
 }

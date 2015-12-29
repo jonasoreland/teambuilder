@@ -2,12 +2,14 @@ package org.oreland.teambuilder.ui;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.oreland.teambuilder.Interactive;
 import org.oreland.teambuilder.sync.Synchronizer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
@@ -91,26 +93,47 @@ public class DialogBuilder {
         return choices.get(result.intResult - 1);
     }
 
-    static public List<Synchronizer.Specifier> selectMulti(DialogBuilder builder, String prompt, List<Synchronizer.Specifier> choices) {
-        Set<String> valueset = new HashSet<>();
+    static public List<Synchronizer.Specifier> selectMulti(DialogBuilder builder, String prompt, List<Synchronizer.Specifier> choices,
+                                                           boolean addAllOption) {
+        Set<String> nameset = new HashSet<>();
         List<String> names = new ArrayList<>();
-        List<String> values = new ArrayList<>();
         for (Synchronizer.Specifier e : choices) {
-            if (!valueset.contains(e.key)) {
-                valueset.add(e.key);
+            if (!nameset.contains(e.name)) {
+                nameset.add(e.name);
                 names.add(e.name);
-                values.add(e.key);
             }
         }
 
+        if (addAllOption) {
+            names.add("ALL");
+        }
+
         builder.setQuestion(prompt);
-        builder.setChoices(names);
+        builder.setMultiChoices(names);
         Dialog.Result result = builder.build().show();
         List<Synchronizer.Specifier> returnValue = new ArrayList<>();
+        if (addAllOption) {
+            if (contains(result.intResults, names.size())) {
+                returnValue.addAll(choices);
+                return returnValue;
+            }
+        }
         for (int res : result.intResults) {
-            returnValue.add(choices.get(res - 1));
+            String name = names.get(res - 1);
+            for (Synchronizer.Specifier spec : choices) {
+                if (spec.name.contentEquals(name))
+                    returnValue.add(spec);
+            }
         }
         return returnValue;
+    }
+
+    private static boolean contains(int[] intResults, int value) {
+        for (int i : intResults) {
+            if (i == value)
+                return true;
+        }
+        return false;
     }
 }
 
