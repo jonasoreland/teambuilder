@@ -93,7 +93,6 @@ public class Interactive {
 
             for (Specifier p : copy) {
                 if (selected_periods.contains(p)) {
-                    System.out.println("team: " + period.first.name + ", period: " + p.name);
                     period.second.add(p);
                 }
             }
