@@ -7,7 +7,6 @@ import org.oreland.teambuilder.ui.DialogBuilder;
 
 import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -50,6 +49,17 @@ public class Interactive {
         ctx.myclub.setupClub(ctx, ctx.prop, ctx.builder);
         ctx.prop.store(new FileOutputStream("config.properties"), null);
         Selection selection = makeSelection(ctx, ctx.myclub);
+        for (Pair<Specifier, List<Specifier>> team : selection.periods) {
+            ctx.myclub.setTeam(ctx, team.first);
+            for (Specifier period : team.second) {
+                ctx.myclub.setPeriod(ctx, period);
+                ctx.repo.reset();
+                ctx.csv.set(ctx, ctx.myclub);
+                ctx.csv.load(ctx);
+                ctx.myclub.load(ctx);
+                ctx.csv.save(ctx);
+            }
+        }
     }
 
     private void statistics() throws Exception {

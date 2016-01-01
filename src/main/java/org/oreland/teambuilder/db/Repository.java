@@ -20,6 +20,12 @@ public class Repository {
     HashMap<String, Player> playersByName = new HashMap<>();
     List<Level> levels = new ArrayList<>();
 
+    public void reset() {
+        activities.clear();
+        playersByName.clear();
+        levels.clear();
+    }
+
     // "Deep copy"
     public Repository clone() {
         Repository rep = new Repository();

@@ -7,7 +7,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.oreland.teambuilder.Context;
-import org.oreland.teambuilder.Pair;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
@@ -33,7 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-
 
 /**
  * Created by jonas on 10/1/15.
@@ -62,6 +60,8 @@ public class MyClub extends DefaultSynchronizer {
 
     public static final String PERIOD_NAME = "periodName";
     public static final String PERIOD_KEY = "period";
+
+    public static final String SPELAR_INFO = "Spelarinfo";
 
     long id = 0;
     private String username = null;
@@ -204,11 +204,11 @@ public class MyClub extends DefaultSynchronizer {
     public Status setupSpelarinfo(Context ctx, Properties config, DialogBuilder builder) {
         Document doc;
         try {
-            if (!config.containsKey("Spelarinfo")) {
-                doc = get(PLAYER_URL + config.getProperty("teamno") + "/members/");
+            if (!config.containsKey(SPELAR_INFO)) {
+                doc = get(PLAYER_URL + config.getProperty(TEAM_NO) + "/members/");
                 Element element = doc.select("p:contains(Spelarinformation) > *").first();
                 String spelarinfo_field = element.attr("value");
-                config.put("Spelarinfo", spelarinfo_field);
+                config.put(SPELAR_INFO, spelarinfo_field);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -439,8 +439,12 @@ public class MyClub extends DefaultSynchronizer {
 
     public void loadPlayers(Context ctx) throws IOException {
         System.out.println("Load player list");
-        String key = ctx.prop.getProperty("Spelarinfo");
-        JSONArray players = getJsonArray(PLAYER_URL + ctx.prop.getProperty("teamno") + "/members/json");
+        String key = ctx.prop.getProperty(SPELAR_INFO);
+        if (key == null) {
+            setupSpelarinfo(ctx, ctx.prop, ctx.builder);
+            key = ctx.prop.getProperty(SPELAR_INFO);
+        }
+        JSONArray players = getJsonArray(PLAYER_URL + ctx.prop.getProperty(TEAM_NO) + "/members/json");
         for (int i = 0; i < players.length(); i++) {
             JSONObject o = players.getJSONObject(i);
             Player p = new Player(o.getString("first_name"), o.getString("last_name"));
@@ -709,7 +713,7 @@ public class MyClub extends DefaultSynchronizer {
     }
 
     private Specifier getSpecifier(Context ctx, String name, String key) {
-        if (ctx.prop.contains(name) && ctx.prop.contains(key)) {
+        if (ctx.prop.containsKey(name) && ctx.prop.containsKey(key)) {
             return new Specifier(ctx.prop.getProperty(name),
                     ctx.prop.getProperty(key));
         }
@@ -722,4 +726,8 @@ public class MyClub extends DefaultSynchronizer {
         }
     }
 
+    public void load(Context ctx) throws Exception {
+        loadPlayers(ctx);
+        loadActivities(ctx);
+    }
 }

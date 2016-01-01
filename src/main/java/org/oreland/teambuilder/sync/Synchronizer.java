@@ -18,9 +18,7 @@
 package org.oreland.teambuilder.sync;
 
 import org.oreland.teambuilder.Context;
-import org.oreland.teambuilder.Pair;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 

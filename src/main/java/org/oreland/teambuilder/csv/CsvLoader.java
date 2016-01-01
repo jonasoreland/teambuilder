@@ -10,6 +10,7 @@ import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
+import org.oreland.teambuilder.sync.DefaultSynchronizer;
 import org.oreland.teambuilder.sync.Synchronizer;
 
 import java.io.File;
@@ -33,7 +34,7 @@ import java.util.Properties;
 /**
  * Created by jonas on 10/5/15.
  */
-public class CsvLoader implements Synchronizer {
+public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
 
     String dir;
     String section;

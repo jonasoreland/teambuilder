@@ -17,6 +17,7 @@
 
 package org.oreland.teambuilder.sync;
 
+import org.oreland.teambuilder.Context;
 import org.oreland.teambuilder.sync.util.FormValues;
 import org.oreland.teambuilder.sync.util.SyncHelper;
 
@@ -79,4 +80,11 @@ public abstract class DefaultSynchronizer implements Synchronizer {
         formValues.putAll(values);
         return html;
     }
+
+    public void set(Context ctx, Synchronizer sync) throws Exception {
+        setSection(ctx, sync.getCurrentSection(ctx));
+        setTeam(ctx, sync.getCurrentTeam(ctx));
+        setPeriod(ctx, sync.getCurrentPeriod(ctx));
+    }
+
 }
