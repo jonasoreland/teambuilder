@@ -53,11 +53,11 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
     public void changeDir(Context ctx) {
         StringBuilder sb = new StringBuilder();
         sb.append(getBaseDir(ctx));
-        sb.append(ctx.prop.getProperty("sectionName"));
+        sb.append(this.section);
         sb.append(File.separatorChar);
-        sb.append(ctx.prop.getProperty("teamName"));
+        sb.append(this.team);
         sb.append(File.separatorChar);
-        sb.append(ctx.prop.getProperty("periodName"));
+        sb.append(this.period);
         dir = sb.toString();
     }
 

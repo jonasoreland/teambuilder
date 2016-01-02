@@ -1,5 +1,6 @@
 package org.oreland.teambuilder;
 
+import org.oreland.teambuilder.analysis.Analysis;
 import org.oreland.teambuilder.sync.Synchronizer;
 import org.oreland.teambuilder.sync.Synchronizer.Specifier;
 import org.oreland.teambuilder.ui.Dialog;
@@ -64,6 +65,15 @@ public class Interactive {
 
     private void statistics() throws Exception {
         Selection selection = makeSelection(ctx, ctx.csv);
+        for (Pair<Specifier, List<Specifier>> team : selection.periods) {
+            ctx.repo.reset();
+            ctx.csv.setTeam(ctx, team.first);
+            for (Specifier period : team.second) {
+                ctx.csv.setPeriod(ctx, period);
+                ctx.csv.load(ctx);
+            }
+            new Analysis(ctx.repo).report();
+        }
     }
 
     class Selection {
