@@ -1,5 +1,7 @@
 package org.oreland.teambuilder;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.oreland.teambuilder.analysis.Analysis;
 import org.oreland.teambuilder.sync.Synchronizer;
 import org.oreland.teambuilder.sync.Synchronizer.Specifier;
@@ -7,6 +9,7 @@ import org.oreland.teambuilder.ui.Dialog;
 import org.oreland.teambuilder.ui.DialogBuilder;
 
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -65,15 +68,20 @@ public class Interactive {
 
     private void statistics() throws Exception {
         Selection selection = makeSelection(ctx, ctx.csv);
+
+        final Appendable out = new FileWriter(ctx.wd + "/report.csv");
+        final CSVPrinter printer = Analysis.reportHeader(out);
+
         for (Pair<Specifier, List<Specifier>> team : selection.periods) {
-            ctx.repo.reset();
             ctx.csv.setTeam(ctx, team.first);
             for (Specifier period : team.second) {
+                ctx.repo.reset();
                 ctx.csv.setPeriod(ctx, period);
                 ctx.csv.load(ctx);
+                new Analysis(ctx.repo).report(printer, team.first.name, period.name);
             }
-            new Analysis(ctx.repo).report();
         }
+        printer.close();
     }
 
     class Selection {

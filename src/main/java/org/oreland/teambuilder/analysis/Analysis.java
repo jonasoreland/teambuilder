@@ -1,10 +1,13 @@
 package org.oreland.teambuilder.analysis;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Player;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -85,19 +88,52 @@ public class Analysis {
         }
     }
 
-    public void report() {
-        System.out.println("Antal tr??ningar: " + count(getCompletedTraining()));
-        System.out.println("Barn per tr??ning: " + new Stat<Activity>().toString(getCompletedTraining(), new PerMatch(Player.Type.PLAYER)));
-        System.out.println("Tr??ning per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.TRAINING)));
-        System.out.println("Antal matcher: " + count(getCompletedGames()));
-        System.out.println("Match per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.GAME)));
-        System.out.println("Cup per barn: " + new Stat<Player>().toString(getPlayers(), new PerPlayer(Activity.Type.CUP)));
+    public static CSVPrinter reportHeader(Appendable out) throws Exception {
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader(
+                "lag", "period",
+                "#träningar", "barn/träning", "träning/barn", "barn/ledare", "#matcher", "match/barn", "#cup",
+                "#mycket intresserade", "träning/barn ", "match/barn ",
+                "#resten", "träning/barn  ", "match/barn  ",
+                "#lite intresserade", "träning/barn   ", "match/barn   ").print(out);
+        return printer;
+    }
 
-        System.out.println("Ledart??thet");
-        System.out.println("Barn per ledare match: " + new Stat<Activity>().toString(getCompletedGames(), new BarnPerLedare()));
-        System.out.println("Barn per ledare tr??ning: " + new Stat<Activity>().toString(getCompletedTraining(), new BarnPerLedare()));
+    public void report(CSVPrinter printer, String team, String period) throws Exception {
+        int cnt_training = count(getCompletedTraining());
+        Stat<Activity> barn_per_tranining = new Stat<Activity>(getCompletedTraining(), new PerMatch(Player.Type.PLAYER));
+        Stat<Player> training_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.TRAINING));
+        int cnt_games = count(getCompletedGames());
+        if (cnt_training == 0 && cnt_games == 0)
+            return;
+        Stat<Player> games_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.GAME));
+        Stat<Player> cups_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.CUP));
+        System.out.println("Antal träningar: " + cnt_training);
+        System.out.println("Barn per träning: " + barn_per_tranining);
+        System.out.println("Träning per barn: " + training_per_barn);
+        System.out.println("Antal matcher: " + cnt_games);
+        System.out.println("Match per barn: " + games_per_barn);
+        System.out.println("Cup per barn: " + cups_per_barn);
 
-        System.out.println("Segmentering >=" + (int) (100 * LIMIT_VERY) + "% n??rvaro, <" + (int) (100 * LIMIT_LITTLE) + "% n??rvaro");
+        System.out.println("Ledartäthet");
+        Stat<Activity> barn_per_ledare_games = new Stat<Activity>(getCompletedGames(), new BarnPerLedare());
+        Stat<Activity> barn_per_ledare_training = new Stat<Activity>(getCompletedTraining(), new BarnPerLedare());
+        System.out.println("Barn per ledare match: " + barn_per_ledare_games);
+        System.out.println("Barn per ledare träning: " + barn_per_ledare_training);
+
+        List<String> rec = new ArrayList<>();
+        if (printer != null) {
+            rec.add(team);
+            rec.add(period);
+            rec.add(Integer.toString(cnt_training));
+            rec.add(barn_per_tranining.averageToString());
+            rec.add(training_per_barn.averageToString());
+            rec.add(barn_per_ledare_training.averageToString());
+            rec.add(Integer.toString(cnt_games));
+            rec.add(games_per_barn.averageToString());
+            rec.add(cups_per_barn.averageToString());
+        }
+
+        System.out.println("Segmentering >=" + (int) (100 * LIMIT_VERY) + "% närvaro, <" + (int) (100 * LIMIT_LITTLE) + "% närvaro");
 
         // For Narvaro, if training has 0 invitations then everyone is invited
         {
@@ -156,11 +192,27 @@ public class Analysis {
         names[2] = "Lite intresserade";
         for (int i = 0; i < segment.size(); i++) {
             System.out.println(names[i] + ": " + segment.get(i).size() + " " + (int) (100 * segment.get(i).size() / count(getPlayers())) + "%");
-            if (segment.get(i).size() == 0)
+            if (segment.get(i).size() == 0) {
+                if (printer != null) {
+                    rec.add(Integer.toString(0));
+                    rec.add("");
+                    rec.add("");
+                }
                 continue;
-            System.out.println("Match per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.GAME)));
-            System.out.println("Tr??ning per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING)));
-            System.out.println("Cup per barn: " + new Stat<Player>().toString(segment.get(i).iterator(), new PerPlayer(Activity.Type.CUP)));
+            }
+            Stat<Player> s_match_per_barn = new Stat<Player>(segment.get(i).iterator(), new PerPlayer(Activity.Type.GAME));
+            Stat<Player> s_training_per_barn = new Stat<Player>(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING));
+            System.out.println("Match per barn: " + s_match_per_barn);
+            System.out.println("Träning per barn: " + s_training_per_barn);
+            System.out.println("Cup per barn: " + new Stat<Player>(segment.get(i).iterator(), new PerPlayer(Activity.Type.CUP)));
+            if (printer != null) {
+                rec.add(Integer.toString(segment.get(i).size()));
+                rec.add(s_training_per_barn.averageToString());
+                rec.add(s_match_per_barn.averageToString());
+            }
+        }
+        if (printer != null) {
+            printer.printRecord(rec);
         }
     }
 
@@ -181,18 +233,26 @@ public class Analysis {
     }
 
     public class Stat<T> {
-        public String toString(Iterator<T> iterator, Measure<T> measure) {
-            DescriptiveStatistics stat = new DescriptiveStatistics();
-//            SummaryStatistics stat = new SummaryStatistics();
+        DescriptiveStatistics stat = new DescriptiveStatistics();
+        //SummaryStatistics stat = new SummaryStatistics();
+
+        public Stat(Iterator<T> iterator, Measure<T> measure) {
             while (iterator.hasNext()) {
                 T t = iterator.next();
                 stat.addValue(measure.getValue(t));
             }
+        }
+
+        public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("avg: " + String.format("%.2f", stat.getMean()));
             sb.append(" min/max: " + String.format("%.1f/%.1f", stat.getMin(), stat.getMax()));
             sb.append(" stdev: " + String.format("%.2f", stat.getStandardDeviation()));
             return sb.toString();
+        }
+
+        public String averageToString() {
+            return String.format("%.2f", stat.getMean());
         }
     }
 
@@ -200,7 +260,7 @@ public class Analysis {
 
     private int count(Iterator iterator) {
         int count = 0;
-        while (iterator.next() != null)
+        while (iterator.hasNext() && iterator.next() != null)
             count++;
         return count;
     }

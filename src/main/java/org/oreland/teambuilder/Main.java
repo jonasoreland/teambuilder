@@ -70,7 +70,7 @@ public class Main {
 
         if (analyze) {
             Analysis analysis = new Analysis(ctx.repo);
-            analysis.report();
+            analysis.report(null, null, null);
         }
 
         if (plan) {
