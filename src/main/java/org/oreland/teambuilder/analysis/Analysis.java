@@ -107,6 +107,7 @@ public class Analysis {
             return;
         Stat<Player> games_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.GAME));
         Stat<Player> cups_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.CUP));
+        System.out.println("*** " + team + " - " + period);
         System.out.println("Antal träningar: " + cnt_training);
         System.out.println("Barn per träning: " + barn_per_tranining);
         System.out.println("Träning per barn: " + training_per_barn);

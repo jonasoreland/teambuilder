@@ -237,4 +237,8 @@ public class Repository {
         }
         return res;
     }
+
+    public void prune(Date first, Date second) {
+        // remove all activities before first and after (includes) second
+    }
 };
