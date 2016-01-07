@@ -239,6 +239,17 @@ public class Repository {
     }
 
     public void prune(Date first, Date second) {
+        List<Activity> remove = new ArrayList<>();
         // remove all activities before first and after (includes) second
+        for (Activity a : getActivities()) {
+            if (a.date.before(first) ||
+                a.date.after(second) ||
+                a.date.equals(second))
+              remove.add(a);
+        }
+
+        for (Activity a : remove) {
+          remove(a);
+        }
     }
 };

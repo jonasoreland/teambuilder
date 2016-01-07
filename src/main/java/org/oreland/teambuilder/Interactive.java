@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.oreland.teambuilder.analysis.Analysis;
 import org.oreland.teambuilder.sync.Synchronizer;
 import org.oreland.teambuilder.sync.Synchronizer.Specifier;
+import org.oreland.teambuilder.sync.MyClub;
 import org.oreland.teambuilder.ui.Dialog;
 import org.oreland.teambuilder.ui.DialogBuilder;
 
@@ -89,7 +90,7 @@ public class Interactive {
                     ctx.repo.reset();
                     ctx.csv.setPeriod(ctx, period);
                     ctx.csv.load(ctx);
-                    new Analysis(ctx.repo).report(printer, team.first.name, toString(toUserPeriod(period.name)));
+                    new Analysis(ctx.repo).report(printer, team.first.name, toString(MyClub.periodName2Dates(period.name)));
                 }
             }
         } else {
@@ -99,7 +100,8 @@ public class Interactive {
                     ctx.repo.reset();
                     for (Specifier period : team.second) {
                         // Load all periods contained in user-period
-                        if (Contains(toUserPeriod(period.name), user_period)) {
+                      if (Contains(user_period,
+                          MyClub.periodName2Dates(period.name))) {
                             ctx.csv.setPeriod(ctx, period);
                             ctx.csv.load(ctx);
                         }
@@ -126,34 +128,6 @@ public class Interactive {
 
     private String toString(Pair<Date, Date> period) {
         return (new SimpleDateFormat("yyyy-MM", Locale.US)).format(period.first);
-    }
-
-    // Convert MyClub period name to start/end date
-    private Pair<Date, Date> toUserPeriod(String myclub_name) {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.YEAR, Integer.parseInt(myclub_name.substring(3)));
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.clear(Calendar.MINUTE);
-        cal.clear(Calendar.SECOND);
-        cal.clear(Calendar.MILLISECOND);
-        cal.set(Calendar.DAY_OF_MONTH, 1);
-
-        if (myclub_name.startsWith("HT")) {
-            cal.set(Calendar.MONTH, 7);
-            Date startDate = cal.getTime();
-            cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 1);
-            cal.set(Calendar.MONTH, 0);
-            Date endDate = cal.getTime();
-            System.out.println("period: " + myclub_name + " => " + startDate + ", " + endDate);
-            return new Pair<>(startDate, endDate);
-        } else {
-            cal.set(Calendar.MONTH, 0);
-            cal.set(Calendar.DAY_OF_MONTH, 1);
-            Date startDate = cal.getTime();
-            cal.set(Calendar.MONTH, 7);
-            Date endDate = cal.getTime();
-            return new Pair<>(startDate, endDate);
-        }
     }
 
     private List<Pair<Date, Date>> choosePeriods(Context ctx,
@@ -183,7 +157,7 @@ public class Interactive {
         Date max_date = null;
         for (Pair<Specifier, List<Specifier>> team : periods) {
             for (Specifier period : team.second) {
-                Pair<Date, Date> a = toUserPeriod(period.name);
+                Pair<Date, Date> a = MyClub.periodName2Dates(period.name);
                 if (min_date == null) {
                     min_date = a.first;
                     max_date = a.second;
@@ -218,6 +192,7 @@ public class Interactive {
             list.add(new Pair<Date, Date>((Date)min_date.clone(), (Date)end.clone()));
             min_date = end;
         }
+
         return list;
     }
 

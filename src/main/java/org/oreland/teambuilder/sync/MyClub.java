@@ -7,6 +7,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.oreland.teambuilder.Context;
+import org.oreland.teambuilder.Pair;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
@@ -729,5 +730,32 @@ public class MyClub extends DefaultSynchronizer {
     public void load(Context ctx) throws Exception {
         loadPlayers(ctx);
         loadActivities(ctx);
+    }
+
+    // Convert MyClub period name to start/end date
+    public static Pair<Date, Date> periodName2Dates(String name) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, Integer.parseInt(name.substring(3)));
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.clear(Calendar.MINUTE);
+        cal.clear(Calendar.SECOND);
+        cal.clear(Calendar.MILLISECOND);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+
+        if (name.startsWith("HT")) {
+            cal.set(Calendar.MONTH, 7);
+            Date startDate = cal.getTime();
+            cal.set(Calendar.YEAR, cal.get(Calendar.YEAR) + 1);
+            cal.set(Calendar.MONTH, 0);
+            Date endDate = cal.getTime();
+            return new Pair<>(startDate, endDate);
+        } else {
+            cal.set(Calendar.MONTH, 0);
+            cal.set(Calendar.DAY_OF_MONTH, 1);
+            Date startDate = cal.getTime();
+            cal.set(Calendar.MONTH, 7);
+            Date endDate = cal.getTime();
+            return new Pair<>(startDate, endDate);
+        }
     }
 }

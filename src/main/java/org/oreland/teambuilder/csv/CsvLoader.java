@@ -12,6 +12,7 @@ import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
 import org.oreland.teambuilder.sync.DefaultSynchronizer;
 import org.oreland.teambuilder.sync.Synchronizer;
+import org.oreland.teambuilder.sync.MyClub;
 
 import java.io.File;
 import java.io.FileReader;
@@ -201,6 +202,14 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Collections.sort(list, new Comparator<Specifier>(){
+              public int compare(Specifier s1, Specifier s2) {
+                Pair<Date,Date> p1 = MyClub.periodName2Dates(s1.name);
+                Pair<Date,Date> p2 = MyClub.periodName2Dates(s2.name);
+                return p1.first.compareTo(p2.first);
+              }
+            });
         return list;
     }
 
