@@ -35,11 +35,11 @@ import java.util.Set;
 
 public abstract class DefaultSynchronizer implements Synchronizer {
 
-    protected final Set<String> cookies = new HashSet<String>();
-    protected final FormValues formValues = new FormValues();
+    final Set<String> cookies = new HashSet<String>();
+    final FormValues formValues = new FormValues();
     protected final CookieHandler cookieHandler = CookieManager.getDefault();
 
-    public DefaultSynchronizer() {
+    protected DefaultSynchronizer() {
         super();
         logout();
     }
@@ -64,11 +64,11 @@ public abstract class DefaultSynchronizer implements Synchronizer {
     protected void getCookies(HttpURLConnection conn) throws URISyntaxException {
     }
 
-    protected void clearCookies() {
+    private void clearCookies() {
         CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
     }
 
-    protected String getFormValues(HttpURLConnection conn) throws IOException {
+    String getFormValues(HttpURLConnection conn) throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         StringBuilder buf = new StringBuilder();
         String s = null;

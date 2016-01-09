@@ -24,6 +24,10 @@ public class Player {
         return p;
     }
 
+    public String toString() {
+        return "[ " + first_name + " " + last_name + " ]";
+    }
+
     static public class LevelHistoryEntry {
         public Date date;
         public TargetLevel level;
@@ -65,4 +69,18 @@ public class Player {
      **/
     public List<Activity> games_played = new ArrayList<>();     // games played
     public List<Activity.Invitation> games_invited = new ArrayList<>();
+
+    public void add(Activity act) {
+        for (Activity a : games_played) {
+            if (a.id.contentEquals(act.id)) {
+                return;
+            }
+        }
+        games_played.add(act);
+    }
+
+    public void add(Activity.Invitation invitation) {
+        games_invited.add(invitation);
+    }
+
 }

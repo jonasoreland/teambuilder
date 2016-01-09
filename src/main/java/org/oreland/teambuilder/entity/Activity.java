@@ -79,6 +79,14 @@ public class Activity {
 
     public static class Participant {
         public Player player;
+
+        public Participant() {
+        }
+
+        public Participant(Player p) {
+            this.player = p;
+        }
+
         // TODO(jonas) : Grade each played game for each player ??
         // Level grade;
     }
@@ -128,5 +136,19 @@ public class Activity {
         return true;
     }
 
+    public void add(Participant part) {
+        for (Participant p : participants) {
+            if (p.player == part.player)
+                return;
+        }
+        participants.add(part);
+    }
 
+    public void add(Invitation invitation) {
+        for (Invitation i : invitations) {
+            if (i.player == invitation.player)
+                return;
+        }
+        invitations.add(invitation);
+    }
 }

@@ -11,8 +11,8 @@ import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
 import org.oreland.teambuilder.sync.DefaultSynchronizer;
-import org.oreland.teambuilder.sync.Synchronizer;
 import org.oreland.teambuilder.sync.MyClub;
+import org.oreland.teambuilder.sync.Synchronizer;
 
 import java.io.File;
 import java.io.FileReader;
@@ -37,12 +37,12 @@ import java.util.Properties;
  */
 public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
 
-    String dir;
-    String section;
-    String team;
-    String period;
+    private String dir;
+    private String section;
+    private String team;
+    private String period;
 
-    public String getBaseDir(Context ctx) {
+    private String getBaseDir(Context ctx) {
         StringBuilder sb = new StringBuilder();
         sb.append(ctx.wd);
         sb.append(File.separatorChar);
@@ -51,7 +51,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         return sb.toString();
     }
 
-    public void changeDir(Context ctx) {
+    private void changeDir(Context ctx) {
         StringBuilder sb = new StringBuilder();
         sb.append(getBaseDir(ctx));
         sb.append(this.section);
@@ -62,23 +62,23 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         dir = sb.toString();
     }
 
-    public String getActivitiesFilename() {
+    private String getActivitiesFilename() {
         return dir + "/" + "activities.csv";
     }
 
-    public String getParticipantsFilename() {
+    private String getParticipantsFilename() {
         return dir + "/" + "participants.csv";
     }
 
-    public String getInvitationsFilename() {
+    private String getInvitationsFilename() {
         return dir + "/" + "invitations.csv";
     }
 
-    public String getPlayersFilename() {
+    private String getPlayersFilename() {
         return dir + "/" + "players.csv";
     }
 
-    public String getLevelsFilename() {
+    private String getLevelsFilename() {
         return dir + "/" + "levels.csv";
     }
 
@@ -203,17 +203,17 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
             e.printStackTrace();
         }
 
-        Collections.sort(list, new Comparator<Specifier>(){
-              public int compare(Specifier s1, Specifier s2) {
-                Pair<Date,Date> p1 = MyClub.periodName2Dates(s1.name);
-                Pair<Date,Date> p2 = MyClub.periodName2Dates(s2.name);
+        Collections.sort(list, new Comparator<Specifier>() {
+            public int compare(Specifier s1, Specifier s2) {
+                Pair<Date, Date> p1 = MyClub.periodName2Dates(s1.name);
+                Pair<Date, Date> p2 = MyClub.periodName2Dates(s2.name);
                 return p1.first.compareTo(p2.first);
-              }
-            });
+            }
+        });
         return list;
     }
 
-    public void loadActivities(Repository repo) throws ParseException, IOException {
+    private void loadActivities(Repository repo) throws ParseException, IOException {
         File f = new File(getActivitiesFilename());
         if (!f.exists()) {
             return;
@@ -234,7 +234,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         }
     }
 
-    public void saveActivities(Repository repo) throws IOException {
+    private void saveActivities(Repository repo) throws IOException {
         final Appendable out = new FileWriter(getActivitiesFilename());
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("id", "date", "time", "title", "type", "level", "synced").print(out);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
@@ -255,7 +255,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         printer.close();
     }
 
-    public void loadInvitations(Repository repo) throws ParseException, IOException {
+    private void loadInvitations(Repository repo) throws ParseException, IOException {
         File f = new File(getInvitationsFilename());
         if (!f.exists()) {
             return;
@@ -280,7 +280,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         }
     }
 
-    public void saveInvitations(Repository repo) throws ParseException, IOException {
+    private void saveInvitations(Repository repo) throws ParseException, IOException {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd HH:ss");
         final Appendable out = new FileWriter(dir + "/" + "invitations.csv");
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "type", "invitation_date", "response", "response_date", "response_comment").print(out);
@@ -309,7 +309,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         printer.close();
     }
 
-    public void loadParticipants(Repository repo) throws ParseException, IOException {
+    private void loadParticipants(Repository repo) throws ParseException, IOException {
         File f = new File(getParticipantsFilename());
         if (!f.exists()) {
             return;
@@ -325,7 +325,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         }
     }
 
-    public void saveParticipants(Repository repo) throws ParseException, IOException {
+    private void saveParticipants(Repository repo) throws ParseException, IOException {
         final Appendable out = new FileWriter(getParticipantsFilename());
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("game", "first_name", "last_name", "type").print(out);
         for (Pair<Activity, Activity.Participant> participant : repo.getParticipants()) {

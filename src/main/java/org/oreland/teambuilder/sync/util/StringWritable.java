@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class StringWritable implements Writable {
-    final String s;
+    private final String s;
 
     public StringWritable(String s) {
         this.s = s;

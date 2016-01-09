@@ -43,7 +43,7 @@ public final class SyncHelper {
     /**
      * The regex pattern to find a form input parameter in HTML.
      */
-    public static final Pattern inputPattern =
+    private static final Pattern inputPattern =
             Pattern.compile("<input(.*?)>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern attributePattern =
             Pattern.compile("(\\w+)=\"(.*?)\"");
@@ -94,7 +94,7 @@ public final class SyncHelper {
         outputStream.close();
     }
 
-    public static Map<String, String> parseAttributes(String attributesStr) {
+    private static Map<String, String> parseAttributes(String attributesStr) {
         Map<String, String> attributes = new HashMap<String, String>();
         Matcher matcher = attributePattern.matcher(attributesStr);
         while (matcher.find()) {

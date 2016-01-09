@@ -7,6 +7,8 @@ import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,9 +18,9 @@ import java.util.List;
  * Created by jonas on 10/4/15.
  */
 public class Repository {
-    HashMap<String, Activity> activities = new HashMap<>();
-    HashMap<String, Player> playersByName = new HashMap<>();
-    List<Level> levels = new ArrayList<>();
+    private HashMap<String, Activity> activities = new HashMap<>();
+    private HashMap<String, Player> playersByName = new HashMap<>();
+    private List<Level> levels = new ArrayList<>();
 
     public void reset() {
         activities.clear();
@@ -67,6 +69,14 @@ public class Repository {
 
     public void remove(Activity dup) {
         activities.remove(dup.id);
+        for (Activity.Invitation inv : dup.invitations) {
+            inv.player.games_invited.remove(inv);
+        }
+        for (Activity.Participant part : dup.participants) {
+            part.player.games_played.remove(part);
+        }
+        dup.invitations.clear();
+        dup.participants.clear();
     }
 
     public Player add(Player p) {
@@ -209,19 +219,13 @@ public class Repository {
     }
 
     public void addParticipant(Activity activity, Player p) {
-        Activity.Participant part = new Activity.Participant();
-        part.player = add(p);
-        if (!activity.participants.contains(part)) {
-            activity.participants.add(part);
-            part.player.games_played.add(activity);
-        }
+        activity.add(new Activity.Participant(p));
+        p.add(activity);
     }
 
     public void addInvitation(Activity activity, Activity.Invitation invitation) {
-        if (!activity.invitations.contains(invitation)) {
-            activity.invitations.add(invitation);
-            invitation.player.games_invited.add(invitation);
-        }
+        activity.add(invitation);
+        invitation.player.add(invitation);
     }
 
     public List<Activity> selectActivities(Date startDate, Date endDate, Activity.Type type) {
@@ -238,18 +242,72 @@ public class Repository {
         return res;
     }
 
-    public void prune(Date first, Date second) {
+    //    Date first, Date second
+    public void prune(Filter<Activity> filter) {
         List<Activity> remove = new ArrayList<>();
         // remove all activities before first and after (includes) second
         for (Activity a : getActivities()) {
-            if (a.date.before(first) ||
-                a.date.after(second) ||
-                a.date.equals(second))
-              remove.add(a);
+            if (!filter.OK(a))
+                remove.add(a);
         }
 
         for (Activity a : remove) {
-          remove(a);
+            remove(a);
+        }
+
+        xref();
+    }
+
+    // recompute cross references
+    public void xref() {
+        for (Player p : playersByName.values()) {
+            p.games_invited.clear();
+            p.games_played.clear();
+        }
+
+        for (Activity a : activities.values()) {
+            for (Activity.Invitation i : a.invitations) {
+                Player p = add(i.player);
+                p.add(i);
+            }
+            for (Activity.Participant i : a.participants) {
+                Player p = add(i.player);
+                if (p == null) {
+                    System.out.println("p == null: " + i.player);
+                }
+                p.add(a);
+            }
         }
     }
-};
+
+    public void dump() {
+        List<Activity> new_list = new ArrayList<>();
+        {
+            Iterator<Activity> a = activities.values().iterator();
+            while (a.hasNext()) {
+                new_list.add(a.next());
+            }
+        }
+        Collections.sort(new_list, new Comparator<Activity>() {
+            @Override
+            public int compare(Activity a1, Activity a2) {
+                return a1.date.compareTo(a2.date);
+            }
+        });
+        for (Activity a : new_list) {
+            System.out.println("* " + a);
+            for (Activity.Participant p : a.participants) {
+                System.out.println("\t" + p.player);
+            }
+        }
+        for (Player p : playersByName.values()) {
+            System.out.println("* " + p);
+            for (Activity a : p.games_played) {
+                System.out.println("\tplayed:" + a);
+            }
+            for (Activity.Invitation i : p.games_invited) {
+                System.out.println("\tinvited: " + i);
+            }
+        }
+    }
+}

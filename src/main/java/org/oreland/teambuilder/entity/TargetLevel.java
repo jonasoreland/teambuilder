@@ -17,7 +17,7 @@ public class TargetLevel {
         public int count;
     }
 
-    public List<Distribution> distribution = new ArrayList<Distribution>();
+    private List<Distribution> distribution = new ArrayList<Distribution>();
 
     static public TargetLevel parseJson(Repository repo, String str) {
         if (str == null || str.isEmpty())
@@ -64,7 +64,7 @@ public class TargetLevel {
         return true;
     }
 
-    public Distribution get(Level l) {
+    private Distribution get(Level l) {
         for (Distribution d : distribution) {
             if (d.level == l)
                 return d;

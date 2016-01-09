@@ -5,7 +5,7 @@ package org.oreland.teambuilder.ui;
  */
 public abstract class Dialog {
 
-    public Dialog(Type type, String question) {
+    Dialog(Type type, String question) {
         this.type = type;
         this.prompt = question;
     }
@@ -26,9 +26,9 @@ public abstract class Dialog {
         MultiChoice
     }
 
-    public String prompt;
-    public Type type;
-    public String choices[];
+    String prompt;
+    private Type type;
+    String[] choices;
 
     public abstract Result show();
-};
+}

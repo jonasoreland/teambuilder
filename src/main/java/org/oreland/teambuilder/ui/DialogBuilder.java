@@ -16,10 +16,11 @@ import java.util.Set;
  */
 public class DialogBuilder {
 
-    String question;
-    String choices[];
-    int minValue, maxValue;
-    Dialog.Type type = Dialog.Type.Question;
+    private String question;
+    private String[] choices;
+    private int minValue;
+    private int maxValue;
+    private Dialog.Type type = Dialog.Type.Question;
 
     public DialogBuilder() {
     }
@@ -28,12 +29,12 @@ public class DialogBuilder {
         question = s;
     }
 
-    public void setChoices(String choices[]) {
+    private void setChoices(String choices[]) {
         type = Dialog.Type.Choice;
         this.choices = choices;
     }
 
-    public void setMultiChoices(String choices[]) {
+    private void setMultiChoices(String choices[]) {
         type = Dialog.Type.MultiChoice;
         this.choices = choices;
     }
@@ -177,8 +178,8 @@ class Choice extends Dialog {
 
 class Range extends Dialog {
 
-    int minValue;
-    int maxValue;
+    private int minValue;
+    private int maxValue;
 
     public Range(String question, int minValue, int maxValue) {
         super(Type.Range, question);

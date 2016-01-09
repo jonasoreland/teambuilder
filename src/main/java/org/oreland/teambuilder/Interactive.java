@@ -2,31 +2,29 @@ package org.oreland.teambuilder;
 
 import org.apache.commons.csv.CSVPrinter;
 import org.oreland.teambuilder.analysis.Analysis;
+import org.oreland.teambuilder.db.Filter;
+import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.sync.MyClub;
 import org.oreland.teambuilder.sync.Synchronizer;
 import org.oreland.teambuilder.sync.Synchronizer.Specifier;
-import org.oreland.teambuilder.sync.MyClub;
 import org.oreland.teambuilder.ui.Dialog;
 import org.oreland.teambuilder.ui.DialogBuilder;
 
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.nio.channels.CancelledKeyException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 
 /**
  * Created by jonas on 12/6/15.
  */
-public class Interactive {
-    Context ctx;
+class Interactive {
+    private Context ctx;
 
     public Interactive(Context ctx) {
         this.ctx = ctx;
@@ -80,7 +78,7 @@ public class Interactive {
         final Appendable out = new FileWriter(ctx.wd + "/report.csv");
         final CSVPrinter printer = Analysis.reportHeader(out);
 
-        List<Pair<Date,Date>> periods = choosePeriods(ctx, selection.periods);
+        List<Pair<Date, Date>> periods = choosePeriods(ctx, selection.periods);
 
         if (periods == null) {
             // use myclub periods
@@ -96,18 +94,29 @@ public class Interactive {
         } else {
             for (Pair<Specifier, List<Specifier>> team : selection.periods) {
                 ctx.csv.setTeam(ctx, team.first);
-                for (Pair<Date, Date> user_period : periods) {
+                for (final Pair<Date, Date> user_period : periods) {
                     ctx.repo.reset();
                     for (Specifier period : team.second) {
                         // Load all periods contained in user-period
-                      if (Contains(user_period,
-                          MyClub.periodName2Dates(period.name))) {
+                        if (Contains(user_period,
+                                MyClub.periodName2Dates(period.name))) {
                             ctx.csv.setPeriod(ctx, period);
                             ctx.csv.load(ctx);
                         }
                     }
                     // Prune repo
-                    ctx.repo.prune(user_period.first, user_period.second);
+                    // user_period.first, user_period.second
+                    ctx.repo.prune(new Filter<Activity>() {
+                        @Override
+                        public boolean OK(Activity activity) {
+                            if (activity.date.before(user_period.first) ||
+                                    activity.date.after(user_period.second) ||
+                                    activity.date.equals(user_period.second))
+                                return false;
+                            return true;
+                        }
+                    });
+                    Analysis a = new Analysis(ctx.repo);
                     new Analysis(ctx.repo).report(printer, team.first.name, toString(user_period));
                 }
             }
@@ -132,7 +141,7 @@ public class Interactive {
 
     private List<Pair<Date, Date>> choosePeriods(Context ctx,
                                                  List<Pair<Specifier, List<Specifier>>> periods) {
-        if (countPeriods(periods) == 1)
+        if (false && countPeriods(periods) == 1)
             return null;
 
         List<Specifier> types = new ArrayList<>();
@@ -175,7 +184,7 @@ public class Interactive {
             cal.add(Calendar.MONTH, -2); // move to November
             min_date = cal.getTime();
         }
-        List<Pair<Date,Date>> list = new ArrayList<>();
+        List<Pair<Date, Date>> list = new ArrayList<>();
         while (min_date.before(max_date)) {
             cal.setTime(min_date);
             if (cal.get(Calendar.MONTH) == Calendar.NOVEMBER) {
@@ -189,7 +198,7 @@ public class Interactive {
                 s.append("kalle");
             }
             Date end = cal.getTime();
-            list.add(new Pair<Date, Date>((Date)min_date.clone(), (Date)end.clone()));
+            list.add(new Pair<Date, Date>((Date) min_date.clone(), (Date) end.clone()));
             min_date = end;
         }
 
@@ -207,7 +216,8 @@ public class Interactive {
     }
 
     class Selection {
-        Selection() {}
+        Selection() {
+        }
 
         Specifier section;
         List<Specifier> teams;
@@ -225,7 +235,7 @@ public class Interactive {
         List<Specifier> allperiods = new ArrayList<>();
         for (Specifier team : selection.teams) {
             sync.setTeam(ctx, team);
-            Pair<Specifier,List<Specifier>> p = new Pair<>(team,
+            Pair<Specifier, List<Specifier>> p = new Pair<>(team,
                     sync.listPeriods(ctx));
             selection.periods.add(p);
             allperiods.addAll(p.second);

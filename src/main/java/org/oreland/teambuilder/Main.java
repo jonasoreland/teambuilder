@@ -41,7 +41,7 @@ public class Main {
                 }
             }
         }
-        System.out.println("Hello world, load=" + load + ",sync=" + sync + ",save=" + save +",plan=" + plan);
+        System.out.println("Hello world, load=" + load + ",sync=" + sync + ",save=" + save + ",plan=" + plan);
         Context ctx = new Context();
 
         try {

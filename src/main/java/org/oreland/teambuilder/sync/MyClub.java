@@ -39,30 +39,30 @@ import java.util.Set;
  */
 public class MyClub extends DefaultSynchronizer {
 
-    public static final String CHARSET = "utf-8";
-    public static final String START_URL = "https://www.myclub.se/";
-    public static final String BASE_URL = "https://member.myclub.se";
-    public static final String LOGIN_URL = "https://accounts.myclub.se/d/users/sign_in"; //.json";
-    public static final String CALENDAR_URL = BASE_URL + "/activities/team/show/";
-    public static final String PARTICIPANTS_URL = BASE_URL + "/activities/team/view_parts/";
-    public static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
-    public static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit_info/";
-    public static final String PLAYER_URL = BASE_URL + "/ut/team/";
+    private static final String CHARSET = "utf-8";
+    private static final String START_URL = "https://www.myclub.se/";
+    private static final String BASE_URL = "https://member.myclub.se";
+    private static final String LOGIN_URL = "https://accounts.myclub.se/d/users/sign_in"; //.json";
+    private static final String CALENDAR_URL = BASE_URL + "/activities/team/show/";
+    private static final String PARTICIPANTS_URL = BASE_URL + "/activities/team/view_parts/";
+    private static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
+    private static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit_info/";
+    private static final String PLAYER_URL = BASE_URL + "/ut/team/";
 
-    public static final String CLUB_NAME = "clubName";
-    public static final String CLUB_KEY = "club";
+    private static final String CLUB_NAME = "clubName";
+    private static final String CLUB_KEY = "club";
 
-    public static final String SECTION_NAME = "sectionName";
-    public static final String SECTION_KEY = "section";
+    private static final String SECTION_NAME = "sectionName";
+    private static final String SECTION_KEY = "section";
 
-    public static final String TEAM_NAME = "teamName";
-    public static final String TEAM_KEY = "team";
-    public static final String TEAM_NO = "teamno";
+    private static final String TEAM_NAME = "teamName";
+    private static final String TEAM_KEY = "team";
+    private static final String TEAM_NO = "teamno";
 
-    public static final String PERIOD_NAME = "periodName";
-    public static final String PERIOD_KEY = "period";
+    private static final String PERIOD_NAME = "periodName";
+    private static final String PERIOD_KEY = "period";
 
-    public static final String SPELAR_INFO = "Spelarinfo";
+    private static final String SPELAR_INFO = "Spelarinfo";
 
     long id = 0;
     private String username = null;
@@ -156,7 +156,7 @@ public class MyClub extends DefaultSynchronizer {
         return Status.OK;
     }
 
-    public Status setupSection(Context ctx, Properties config, DialogBuilder builder) {
+    private Status setupSection(Context ctx, Properties config, DialogBuilder builder) {
         Document doc;
         try {
             Specifier section = getCurrentSection(ctx);
@@ -171,7 +171,7 @@ public class MyClub extends DefaultSynchronizer {
         return Status.OK;
     }
 
-    public Status setupTeam(Context ctx, Properties config, DialogBuilder builder) {
+    private Status setupTeam(Context ctx, Properties config, DialogBuilder builder) {
         Document doc;
         try {
             Specifier team = getCurrentTeam(ctx);
@@ -186,7 +186,7 @@ public class MyClub extends DefaultSynchronizer {
         return Status.OK;
     }
 
-    public Status setupPeriod(Context ctx, Properties config, DialogBuilder builder) {
+    private Status setupPeriod(Context ctx, Properties config, DialogBuilder builder) {
         Document doc;
         try {
             Specifier period = getCurrentPeriod(ctx);
@@ -202,7 +202,7 @@ public class MyClub extends DefaultSynchronizer {
         return Status.OK;
     }
 
-    public Status setupSpelarinfo(Context ctx, Properties config, DialogBuilder builder) {
+    private Status setupSpelarinfo(Context ctx, Properties config, DialogBuilder builder) {
         Document doc;
         try {
             if (!config.containsKey(SPELAR_INFO)) {
@@ -218,27 +218,27 @@ public class MyClub extends DefaultSynchronizer {
         return Status.OK;
     }
 
-    public void setClubEx(Specifier club) throws IOException {
+    private void setClubEx(Specifier club) throws IOException {
         System.out.println("Loading club: " + club.name);
         Document doc = get(BASE_URL + club.key);
     }
 
-    public void setSectionEx(Specifier section) throws IOException {
+    private void setSectionEx(Specifier section) throws IOException {
         System.out.println("Loading section: " + section.name);
         Document doc = get(BASE_URL + section.key);
     }
 
-    public void setTeamEx(Specifier team) throws IOException {
+    private void setTeamEx(Specifier team) throws IOException {
         System.out.println("Loading team: " + team.name);
         Document doc = get(BASE_URL + team.key);
     }
 
-    public void setPeriodEx(Specifier period) throws IOException {
+    private void setPeriodEx(Specifier period) throws IOException {
         System.out.println("Loading period: " + period.name);
         Document doc = get(BASE_URL + period.key);
     }
 
-    public List<Specifier> list(String baseUrl, String query) throws IOException {
+    private List<Specifier> list(String baseUrl, String query) throws IOException {
         Document doc = get(baseUrl);
         Set<String> values = new HashSet<>();
         List<Specifier> list = new ArrayList<>();
@@ -295,7 +295,7 @@ public class MyClub extends DefaultSynchronizer {
         Dialog.Result result = builder.build().show();
         List<Specifier> returnValue = new ArrayList<>();
         for (int res : result.intResults) {
-            returnValue.add(new Specifier(choices.get(res-1), choiceValues.get(res - 1)));
+            returnValue.add(new Specifier(choices.get(res - 1), choiceValues.get(res - 1)));
         }
         return returnValue;
     }
@@ -423,7 +423,7 @@ public class MyClub extends DefaultSynchronizer {
         return s;
     }
 
-    HttpURLConnection send(String startUrl, HttpURLConnection conn) throws IOException {
+    private HttpURLConnection send(String startUrl, HttpURLConnection conn) throws IOException {
         int status = conn.getResponseCode();
         if (status != HttpURLConnection.HTTP_OK) {
             if (status == HttpURLConnection.HTTP_MOVED_TEMP
@@ -577,7 +577,7 @@ public class MyClub extends DefaultSynchronizer {
         }
     }
 
-    public void loadInvitations(Repository repo, Activity activity) throws IOException, ParseException {
+    private void loadInvitations(Repository repo, Activity activity) throws IOException, ParseException {
         activity.invitations.clear();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:ss");
         Document doc = get(getInvitationsUrl(activity));
@@ -720,6 +720,7 @@ public class MyClub extends DefaultSynchronizer {
         }
         return null;
     }
+
     private void setSpecifier(Context ctx, String sectionName, String sectionKey, Specifier section) {
         if (section.isValid()) {
             ctx.prop.setProperty(sectionName, section.name);

@@ -3,11 +3,11 @@ package org.oreland.teambuilder.analysis;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.oreland.teambuilder.db.Filter;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Player;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,13 +19,30 @@ import java.util.List;
  */
 public class Analysis {
 
-    Repository repo;
+    private Repository repo;
 
-    public static final double LIMIT_VERY = 0.8;
-    public static final double LIMIT_LITTLE = 0.3;
+    private static final double LIMIT_VERY = 0.8;
+    private static final double LIMIT_LITTLE = 0.3;
 
     public Analysis(Repository repo) {
         this.repo = repo.clone();
+
+        // remove REQUEST these are not interesting for analysis...
+        repo.prune(new Filter<Activity>() {
+            @Override
+            public boolean OK(Activity activity) {
+                switch (activity.type) {
+                    case GAME:
+                    case TRAINING:
+                    case CUP:
+                        return true;
+                    case REQUEST:
+                        return false;
+                }
+                return false;
+            }
+        });
+
         // merge activities that has been artificially split
         // to increase LOK...(e.g training same date/time)
         mergeSplitActivities();
@@ -65,6 +82,7 @@ public class Analysis {
         for (Activity a : remove) {
             repo.remove(a);
         }
+        repo.xref();
     }
 
     private void merge(List<Activity> merge, List<Activity> remove) {
@@ -79,13 +97,15 @@ public class Analysis {
 
     private void merge(Activity keep, Activity dup) {
         for (Activity.Invitation inv : dup.invitations) {
-            inv.player.games_invited.remove(dup);
+            inv.player.games_invited.remove(inv);
             repo.addInvitation(keep, inv);
         }
         for (Activity.Participant part : dup.participants) {
-            part.player.games_played.remove(dup);
+            part.player.games_played.remove(part);
             repo.addParticipant(keep, part.player);
         }
+        dup.invitations.clear();
+        dup.participants.clear();
     }
 
     public static CSVPrinter reportHeader(Appendable out) throws Exception {
@@ -217,16 +237,12 @@ public class Analysis {
         }
     }
 
-    boolean was_invited(Player p, Activity act) {
+    private boolean was_invited(Player p, Activity act) {
         for (Activity.Invitation inv : act.invitations) {
             if (inv.player == p)
                 return true;
         }
         return false;
-    }
-
-    private abstract class Filter<T> {
-        public abstract boolean OK(T t);
     }
 
     private abstract class Measure<T> {
@@ -257,8 +273,6 @@ public class Analysis {
         }
     }
 
-    ;
-
     private int count(Iterator iterator) {
         int count = 0;
         while (iterator.hasNext() && iterator.next() != null)
@@ -285,8 +299,6 @@ public class Analysis {
         }
     }
 
-    ;
-
     private class PerMatch extends Measure<Activity> {
         Player.Type type;
 
@@ -304,8 +316,6 @@ public class Analysis {
             return found;
         }
     }
-
-    ;
 
     private class PerPlayer extends Measure<Player> {
         Activity.Type type;
@@ -325,8 +335,6 @@ public class Analysis {
         }
     }
 
-    ;
-
     private class Narvaro extends Measure<Player> {
         @Override
         public double getValue(Player player) {
@@ -339,7 +347,7 @@ public class Analysis {
         }
     }
 
-    public Iterator<Activity> getCompletedGames() {
+    private Iterator<Activity> getCompletedGames() {
         return new FilteredIterator<>(repo.getActivities().iterator(), new Filter<Activity>() {
             @Override
             public boolean OK(Activity activity) {
@@ -348,7 +356,7 @@ public class Analysis {
         });
     }
 
-    public Iterator<Activity> getCompletedTraining() {
+    private Iterator<Activity> getCompletedTraining() {
         return new FilteredIterator<>(repo.getActivities().iterator(), new Filter<Activity>() {
             @Override
             public boolean OK(Activity activity) {
@@ -357,18 +365,18 @@ public class Analysis {
         });
     }
 
-    public Filter<Player> PlayerFilter = new Filter<Player>() {
+    private Filter<Player> PlayerFilter = new Filter<Player>() {
         @Override
         public boolean OK(Player player) {
             return player.guest == false && player.type == Player.Type.PLAYER;
         }
     };
 
-    public Iterator<Player> getPlayers() {
+    private Iterator<Player> getPlayers() {
         return new FilteredIterator<>(repo.getPlayers(), PlayerFilter);
     }
 
-    public int countInvitedPlayers(Activity act) {
+    private int countInvitedPlayers(Activity act) {
         int count = 0;
         for (Activity.Invitation inv : act.invitations) {
             if (PlayerFilter.OK(inv.player))
@@ -377,7 +385,7 @@ public class Analysis {
         return count;
     }
 
-    public Iterator<Player> getUngradedPlayers() {
+    private Iterator<Player> getUngradedPlayers() {
         return new FilteredIterator<>(repo.getPlayers(), new Filter<Player>() {
             @Override
             public boolean OK(Player player) {

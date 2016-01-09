@@ -17,9 +17,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
-public class TeamBuilder {
+class TeamBuilder {
 
-    final Repository repo;
+    private final Repository repo;
 
     public TeamBuilder(Repository repo) {
         this.repo = repo.clone();
@@ -116,7 +116,7 @@ public class TeamBuilder {
         return candidate_requests.get(result.intResult - 1);
     }
 
-    void setResponses(Activity request, List<Activity> games) {
+    private void setResponses(Activity request, List<Activity> games) {
         int yes = 0;
         for (Activity.Invitation invitation : request.invitations) {
             if (invitation.player.type != Player.Type.PLAYER)
@@ -151,7 +151,7 @@ public class TeamBuilder {
         }
     }
 
-    void setParticipants(List<Activity> games) {
+    private void setParticipants(List<Activity> games) {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         for (Activity act : games) {
             DialogBuilder builder = new DialogBuilder();
@@ -173,6 +173,6 @@ public class TeamBuilder {
         return null;
     }
 
-    void computeTeams(List<Activity> games) {
+    private void computeTeams(List<Activity> games) {
     }
 }

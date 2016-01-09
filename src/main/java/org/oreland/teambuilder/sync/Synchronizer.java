@@ -24,7 +24,7 @@ import java.util.Properties;
 
 public interface Synchronizer {
 
-    public enum RequestMethod {GET, POST, PATCH, PUT;}
+    enum RequestMethod {GET, POST, PATCH, PUT}
 
     enum AuthMethod {
         OAUTH2, USER_PASS
@@ -40,30 +40,30 @@ public interface Synchronizer {
     /**
      * @return name of this synchronizer
      */
-    public String getName();
+    String getName();
 
     /**
      * read config
      *
      * @param config
      */
-    public void init(Properties config);
+    void init(Properties config);
 
-    public void reset();
+    void reset();
 
     /**
      * Connect
      *
      * @return true ok false cancel/fail
      */
-    public Status connect();
+    Status connect();
 
     /**
      * logout
      *
      * @return
      */
-    public void logout();
+    void logout();
 
     class Specifier {
         public String name;
@@ -82,18 +82,23 @@ public interface Synchronizer {
         public boolean isValid() {
             return name != null && key != null;
         }
-    };
+    }
 
-    public List<Specifier> listSections(Context ctx) throws Exception;
-    public List<Specifier> listTeams(Context ctx) throws Exception;
-    public List<Specifier> listPeriods(Context ctx) throws Exception;
+    List<Specifier> listSections(Context ctx) throws Exception;
 
-    public void setSection(Context ctx, Specifier section) throws Exception;
-    public Specifier getCurrentSection(Context ctx);
+    List<Specifier> listTeams(Context ctx) throws Exception;
 
-    public void setTeam(Context ctx, Specifier team) throws Exception;
-    public Specifier getCurrentTeam(Context ctx);
+    List<Specifier> listPeriods(Context ctx) throws Exception;
 
-    public void setPeriod(Context ctx, Specifier period) throws Exception;
-    public Specifier getCurrentPeriod(Context ctx);
+    void setSection(Context ctx, Specifier section) throws Exception;
+
+    Specifier getCurrentSection(Context ctx);
+
+    void setTeam(Context ctx, Specifier team) throws Exception;
+
+    Specifier getCurrentTeam(Context ctx);
+
+    void setPeriod(Context ctx, Specifier period) throws Exception;
+
+    Specifier getCurrentPeriod(Context ctx);
 }

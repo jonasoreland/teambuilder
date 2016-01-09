@@ -17,13 +17,13 @@
 
 package org.oreland.teambuilder.sync.util;
 
-public class Part<Value extends Writable> {
+class Part<Value extends Writable> {
 
-    String name = null;
-    String filename = null;
-    String contentType = null;
-    String contentTransferEncoding = null;
-    Value value = null;
+    private String name = null;
+    private String filename = null;
+    private String contentType = null;
+    private String contentTransferEncoding = null;
+    private Value value = null;
 
     public Part(String name, Value value) {
         this.name = name;
