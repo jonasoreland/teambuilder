@@ -28,7 +28,7 @@ public class Analysis {
         this.repo = repo.clone();
 
         // remove REQUEST these are not interesting for analysis...
-        repo.prune(new Filter<Activity>() {
+        this.repo.prune(new Filter<Activity>() {
             @Override
             public boolean OK(Activity activity) {
                 switch (activity.type) {
@@ -341,7 +341,6 @@ public class Analysis {
             double val = player.games_played.size();
             if (player.games_invited.size() == 0)
                 return 0;
-
             val /= player.games_invited.size();
             return val;
         }

@@ -83,4 +83,12 @@ public class Player {
         games_invited.add(invitation);
     }
 
+    public void dump() {
+        for(Activity a : games_played) {
+            System.out.println("played: " + a);
+        }
+        for(Activity.Invitation a : games_invited) {
+            System.out.println("invited: " + a.invitation_date + ", " + a.response_date);
+        }
+    }
 }

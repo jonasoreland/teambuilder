@@ -48,7 +48,11 @@ public class Repository {
             }
             for (Activity.Participant par : a.participants) {
                 Activity.Participant new_par = new Activity.Participant();
-                rep.addParticipant(new_a, rep.getPlayer(par.player.first_name, par.player.last_name));
+                Player p = rep.getPlayer(par.player.first_name, par.player.last_name);
+                if (p == null) {
+                    System.out.println("no player " + par.player.first_name + ", " + par.player.last_name);
+                }
+                rep.addParticipant(new_a, p);
             }
         }
         return rep;
@@ -254,7 +258,6 @@ public class Repository {
         for (Activity a : remove) {
             remove(a);
         }
-
         xref();
     }
 
