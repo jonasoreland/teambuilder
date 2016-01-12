@@ -7,6 +7,7 @@ import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -67,8 +68,8 @@ public class Repository {
             levels.add(l);
     }
 
-    public Iterator<Player> getPlayers() {
-        return playersByName.values().iterator();
+    public Collection<Player> getPlayers() {
+        return playersByName.values();
     }
 
     public void remove(Activity dup) {

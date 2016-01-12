@@ -25,7 +25,10 @@ class TeamBuilder {
         this.repo = repo.clone();
     }
 
-    public void plan() {
+    public void plan(Context ctx) throws Exception {
+        // 1. compute how to construct teams
+        computeDistribution();
+
         // 1. Select games to plan
         List<Activity> games = selectGames();
         for (Activity act : games) {
@@ -34,7 +37,7 @@ class TeamBuilder {
         // 2. Determine availability
         Activity request = selectRequest(games);
         setResponses(request, games);
-        // 3. Set no of paritcipants per game
+        // 3. Set no of participants per game
         setParticipants(games);
         // 3. Compute teams
         computeTeams(games);
@@ -165,6 +168,135 @@ class TeamBuilder {
         }
     }
 
+    TargetLevel getPlayersPerLevel() throws Exception {
+        Player target = null;
+        for (Player p : repo.getPlayers()) {
+            if (p.type != Player.Type.LEADER)
+                continue;
+            if (p.target_level != null) {
+                if (target == null)
+                    target = p;
+                else if (!target.target_level.equal(p.target_level)) {
+                    System.out.println("Conflicting counts!");
+                    System.out.println(target + " - " + target.target_level);
+                    System.out.println(p + " - " + p.target_level);
+                    throw new Exception("Error!");
+                }
+            }
+        }
+        if (target == null) {
+            System.out.println("Could not find players per level!");
+            System.out.println("Please set this a targetLevel on a LEADER");
+            throw new Exception("Error!");
+        }
+        return target.target_level;
+    }
+
+    TargetLevel countGamesPerLevel() throws Exception {
+        TargetLevel gamesPerLevel = new TargetLevel();
+        for (Activity a : repo.getActivities()) {
+            if (a.type != Activity.Type.GAME)
+                continue;
+            if (a.level == null) {
+                System.out.println("Found game without level! " + a);
+                throw new Exception("Error");
+            }
+            gamesPerLevel.getOrCreate(a.level).count++;
+        }
+        return gamesPerLevel;
+    }
+
+    TargetLevel computeAppearancesPerLevel(TargetLevel playersPerGame, TargetLevel gamesPerLevel) {
+        TargetLevel playersPerLevel = new TargetLevel();
+        for (TargetLevel.Distribution d1 : playersPerGame.distribution) {
+            TargetLevel.Distribution d2 = gamesPerLevel.get(d1.level);
+            TargetLevel.Distribution new_d = playersPerLevel.getOrCreate(d1.level);
+            new_d.count = d1.count * d2.count;
+        }
+        return playersPerLevel;
+    }
+
+    List<TargetLevel> getPlayerLevels() {
+        List<TargetLevel> levels = new ArrayList<>();
+        for (Player p : repo.getPlayers()) {
+            if (p.type != Player.Type.PLAYER)
+                continue;
+            if (p.target_level != null) {
+                levels.add(new TargetLevel(p.target_level));
+            } else {
+                System.out.println(p + " has no target level!");
+            }
+        }
+        return levels;
+    }
+
+    private void computeDistribution() throws Exception {
+        // AJ35:AJ39
+        TargetLevel playersPerGame = getPlayersPerLevel();
+        System.out.println("playersPerGame: " + playersPerGame);
+        // AI35:AI39
+        TargetLevel gamesPerLevel = countGamesPerLevel();
+        System.out.println("gamesPerLevel: " + gamesPerLevel);
+        // AL35:AL39
+        TargetLevel appearancesPerLevel = computeAppearancesPerLevel(playersPerGame, gamesPerLevel);
+        System.out.println("apperancesPerLevel: " + appearancesPerLevel);
+
+        // AI40
+        double totalAppearances = 0; // total "appearances"
+        for (TargetLevel.Distribution d : appearancesPerLevel.distribution) {
+            totalAppearances += d.count;
+        }
+        System.out.println("totalAppearances: " + totalAppearances);
+
+        List<TargetLevel> playerLevels = normalize(getPlayerLevels());
+
+        // D25
+        double sumGamesPerWeek = playerLevels.size(); // TODO
+        // U4:Y24
+        for (TargetLevel l : playerLevels) {
+            for (TargetLevel.Distribution d : l.distribution) {
+                d.count *= totalAppearances;
+                d.count /= sumGamesPerWeek;
+            }
+        }
+
+        // U25:Y25
+        TargetLevel sumLevel = new TargetLevel();
+        for (TargetLevel l : playerLevels) {
+            for (TargetLevel.Distribution d : l.distribution) {
+                sumLevel.getOrCreate(d.level).count += d.count;
+            }
+        }
+        System.out.println("sumLevel: " + sumLevel);
+
+        // AA4:AE4
+        TargetLevel norm = new TargetLevel(appearancesPerLevel);
+        for (TargetLevel.Distribution d : norm.distribution) {
+            TargetLevel.Distribution d2 = sumLevel.get(d.level);
+            if (d2 == null || d2.count == 0) {
+                d.count = 0;
+            } else {
+                d.count /= d2.count;
+            }
+        }
+        System.out.println("norm: " + sumLevel);
+
+        // AG4:AL24
+        for (TargetLevel l : playerLevels) {
+            for (TargetLevel.Distribution d : l.distribution) {
+                d.count *= norm.get(d.level).count;
+                d.count = Math.min(d.count, gamesPerLevel.get(d.level).count);
+            }
+        }
+    }
+
+    List<TargetLevel> normalize(List<TargetLevel> playerLevels) {
+        for (TargetLevel l : playerLevels) {
+            l.normalize();
+        }
+        return playerLevels;
+    }
+
     Level getOptimalNextGame(Player p) {
         TargetLevel played = new TargetLevel();
         for (Activity act : p.games_played) {
@@ -173,6 +305,6 @@ class TeamBuilder {
         return null;
     }
 
-    private void computeTeams(List<Activity> games) {
+    private void computeTeams(List<Activity> games) throws Exception {
     }
 }

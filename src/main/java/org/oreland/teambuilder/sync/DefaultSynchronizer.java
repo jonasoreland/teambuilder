@@ -87,4 +87,9 @@ public abstract class DefaultSynchronizer implements Synchronizer {
         setPeriod(ctx, sync.getCurrentPeriod(ctx));
     }
 
+    public void set(Context ctx, Specifier section, Specifier team, Specifier period) throws Exception {
+        setSection(ctx, section);
+        setTeam(ctx, team);
+        setPeriod(ctx, period);
+    }
 }

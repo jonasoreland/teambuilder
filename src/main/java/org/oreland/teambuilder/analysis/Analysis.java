@@ -372,7 +372,7 @@ public class Analysis {
     };
 
     private Iterator<Player> getPlayers() {
-        return new FilteredIterator<>(repo.getPlayers(), PlayerFilter);
+        return new FilteredIterator<>(repo.getPlayers().iterator(), PlayerFilter);
     }
 
     private int countInvitedPlayers(Activity act) {
@@ -385,7 +385,7 @@ public class Analysis {
     }
 
     private Iterator<Player> getUngradedPlayers() {
-        return new FilteredIterator<>(repo.getPlayers(), new Filter<Player>() {
+        return new FilteredIterator<>(repo.getPlayers().iterator(), new Filter<Player>() {
             @Override
             public boolean OK(Player player) {
                 return player.type == Player.Type.PLAYER && player.level_history.isEmpty();

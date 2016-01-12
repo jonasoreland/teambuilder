@@ -377,6 +377,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
             p.guest = Boolean.parseBoolean(record.get("guest"));
             p = repo.add(p);
             Date d = formatter.parse(record.get("date"));
+            System.out.println(p + " - " + record.get("target"));
             TargetLevel level = TargetLevel.parseJson(repo, record.get("target"));
             repo.addTarget(p, level, d);
         }
@@ -386,12 +387,9 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         final Appendable out = new FileWriter(getPlayersFilename());
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("date", "first_name", "last_name", "type", "guest", "target").print(out);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
-        Iterator<Player> players = repo.getPlayers();
+        Iterator<Player> players = repo.getPlayers().iterator();
         while (players.hasNext()) {
             Player p = players.next();
-            if (p.type != Player.Type.PLAYER)
-                continue;
-
             if (p.level_history.isEmpty()) {
                 List<String> rec = new ArrayList<>();
                 rec.add(formatter.format(Calendar.getInstance().getTime()));

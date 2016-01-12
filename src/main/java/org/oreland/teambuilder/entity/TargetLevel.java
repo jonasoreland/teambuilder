@@ -14,10 +14,20 @@ public class TargetLevel {
 
     public class Distribution {
         public Level level;
-        public int count;
+        public double count;
     }
 
-    private List<Distribution> distribution = new ArrayList<Distribution>();
+    public List<Distribution> distribution = new ArrayList<Distribution>();
+
+    public TargetLevel() {
+    }
+
+    public TargetLevel(TargetLevel target_level) {
+        for (Distribution d : target_level.distribution) {
+            Distribution new_d = getOrCreate(d.level);
+            new_d.count = d.count;
+        }
+    }
 
     static public TargetLevel parseJson(Repository repo, String str) {
         if (str == null || str.isEmpty())
@@ -64,7 +74,7 @@ public class TargetLevel {
         return true;
     }
 
-    private Distribution get(Level l) {
+    public Distribution get(Level l) {
         for (Distribution d : distribution) {
             if (d.level == l)
                 return d;
@@ -93,5 +103,17 @@ public class TargetLevel {
         }
         str.append("]");
         return str.toString();
+    }
+
+    public void normalize() {
+        double sum = 0;
+        for (Distribution d : distribution) {
+            sum += d.count;
+        }
+        if (sum == 0)
+            return;
+        for (Distribution d : distribution) {
+            d.count /= sum;
+        }
     }
 }

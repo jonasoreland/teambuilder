@@ -440,6 +440,7 @@ public class MyClub extends DefaultSynchronizer {
 
     public void loadPlayers(Context ctx) throws IOException {
         System.out.println("Load player list");
+        ctx.prop.remove(SPELAR_INFO); // always reload spelar info
         String key = ctx.prop.getProperty(SPELAR_INFO);
         if (key == null) {
             setupSpelarinfo(ctx, ctx.prop, ctx.builder);
@@ -452,9 +453,9 @@ public class MyClub extends DefaultSynchronizer {
             p.type = o.getBoolean("is_leader") ? Player.Type.LEADER : Player.Type.PLAYER;
             p = ctx.repo.add(p);
             String targetstr = o.optString(key);
-            TargetLevel level = TargetLevel.parseJson(ctx.repo, targetstr);
-            if (level != null) {
-                ctx.repo.addTarget(p, level, Calendar.getInstance().getTime());
+            TargetLevel target = TargetLevel.parseJson(ctx.repo, targetstr);
+            if (target != null) {
+                ctx.repo.addTarget(p, target, Calendar.getInstance().getTime());
             }
         }
     }
@@ -758,5 +759,24 @@ public class MyClub extends DefaultSynchronizer {
             Date endDate = cal.getTime();
             return new Pair<>(startDate, endDate);
         }
+    }
+
+    public List<Specifier> GetCurrent(Context ctx) {
+        List<Specifier> ret = new ArrayList<>();
+        Specifier section = getCurrentSection(ctx);
+        if (section == null) {
+            return ret;
+        }
+        ret.add(section);
+        Specifier team = getCurrentTeam(ctx);
+        if (team == null) {
+            return ret;
+        }
+        ret.add(team);
+        Specifier period = getCurrentPeriod(ctx);
+        if (period == null)
+            return ret;
+        ret.add(period);
+        return ret;
     }
 }

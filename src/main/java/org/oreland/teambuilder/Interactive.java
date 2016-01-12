@@ -38,6 +38,7 @@ class Interactive {
             choices.add("Quit");
             choices.add("Synchronize (download from MyClub)");
             choices.add("Run statistics and generate report (on downloaded data)");
+            choices.add("Construct teams for upcoming games");
             builder.setChoices(choices);
             Dialog.Result result = builder.build().show();
             switch (result.intResult) {
@@ -49,6 +50,9 @@ class Interactive {
                 case 3:
                     statistics();
                     break;
+                case 4:
+                    plan();
+                    break;
             }
         }
     }
@@ -58,7 +62,7 @@ class Interactive {
         ctx.myclub.login(ctx.prop, ctx.builder);
         ctx.myclub.setupClub(ctx, ctx.prop, ctx.builder);
         ctx.prop.store(new FileOutputStream("config.properties"), null);
-        Selection selection = makeSelection(ctx, ctx.myclub);
+        Selection selection = makeSelection(ctx, ctx.myclub, true);
         for (Pair<Specifier, List<Specifier>> team : selection.periods) {
             ctx.myclub.setTeam(ctx, team.first);
             for (Specifier period : team.second) {
@@ -73,7 +77,7 @@ class Interactive {
     }
 
     private void statistics() throws Exception {
-        Selection selection = makeSelection(ctx, ctx.csv);
+        Selection selection = makeSelection(ctx, ctx.csv, true);
 
         final Appendable out = new FileWriter(ctx.wd + "/report.csv");
         final CSVPrinter printer = Analysis.reportHeader(out);
@@ -224,13 +228,19 @@ class Interactive {
         List<Pair<Specifier, List<Specifier>>> periods; // Pair<Team, List<Period>>
     }
 
-    private Selection makeSelection(Context ctx, Synchronizer sync) throws Exception {
+    private Selection makeSelection(Context ctx, Synchronizer sync, boolean multi) throws Exception {
         Selection selection = new Selection();
         selection.section = DialogBuilder.selectOne(ctx.builder,
                 "Select section", sync.listSections(ctx));
         sync.setSection(ctx, selection.section);
-        selection.teams = DialogBuilder.selectMulti(ctx.builder,
-                "Select teams", sync.listTeams(ctx), true);
+        if (multi) {
+            selection.teams = DialogBuilder.selectMulti(ctx.builder,
+                    "Select teams", sync.listTeams(ctx), true);
+        } else {
+            selection.teams = new ArrayList<>();
+            selection.teams.add(DialogBuilder.selectOne(ctx.builder,
+                    "Select team", sync.listTeams(ctx)));
+        }
         selection.periods = new ArrayList<>();
         List<Specifier> allperiods = new ArrayList<>();
         for (Specifier team : selection.teams) {
@@ -241,8 +251,13 @@ class Interactive {
             allperiods.addAll(p.second);
         }
         HashSet<Specifier> selected_periods = new HashSet<>();
-        selected_periods.addAll(DialogBuilder.selectMulti(ctx.builder,
-                "Select periods", allperiods, true));
+        if (multi) {
+            selected_periods.addAll(DialogBuilder.selectMulti(ctx.builder,
+                    "Select periods", allperiods, true));
+        } else {
+            selected_periods.add(DialogBuilder.selectOne(ctx.builder,
+                    "Select period", allperiods));
+        }
 
         // remove those periods that were not selected
         for (Pair<Specifier, List<Specifier>> period : selection.periods) {
@@ -259,5 +274,50 @@ class Interactive {
         }
 
         return selection;
+    }
+
+    void set(Context ctx, Specifier section, Specifier team, Specifier period) throws Exception {
+    }
+
+    private void setPlanSelection(Context ctx) throws Exception{
+        List<Specifier> cwd = ctx.myclub.GetCurrent(ctx);
+        if (cwd.size() == 3) {
+            // we have FQPN see if we should reuse it...
+            Specifier keep = new Specifier(cwd.get(0).name + "/" + cwd.get(1).name + "/" + cwd.get(2).name);
+            Specifier change = new Specifier("New selection");
+            List<Specifier> choices = new ArrayList<>();
+            choices.add(keep);
+            choices.add(change);
+            Specifier value = DialogBuilder.selectOne(ctx.builder, "Which team?", choices);
+            if (value != keep) {
+                cwd.clear();
+            }
+        }
+        if (cwd.size() != 3) {
+            Selection selection = makeSelection(ctx, ctx.myclub, false);
+            set(ctx, selection.section, selection.teams.get(0), selection.periods.get(0).second.get(0));
+            ctx.prop.store(new FileOutputStream("config.properties"), null);
+        } else {
+            ctx.csv.set(ctx, cwd.get(0), cwd.get(1), cwd.get(2));
+        }
+    }
+
+    private void plan() throws Exception {
+        boolean sync = false;
+        ctx.myclub.init(ctx.prop);
+        if (sync) {
+            ctx.myclub.login(ctx.prop, ctx.builder);
+            ctx.myclub.setupClub(ctx, ctx.prop, ctx.builder);
+        }
+        setPlanSelection(ctx);
+        ctx.csv.load(ctx);
+
+        sync = false;
+        if (sync) {
+            // ctx.myclub.set(ctx, ctx.csv);
+            ctx.myclub.load(ctx);
+        }
+        new TeamBuilder(ctx.repo).plan(ctx);
+
     }
 }
