@@ -20,6 +20,9 @@ import java.util.List;
 class TeamBuilder {
 
     private final Repository repo;
+    private TargetLevel playersPerGame;
+    private TargetLevel gamesPerLevel;
+    private List<Pair<Level, TargetLevel>> distribution;
 
     public TeamBuilder(Repository repo) {
         this.repo = repo.clone();
@@ -209,7 +212,7 @@ class TeamBuilder {
     TargetLevel computeAppearancesPerLevel(TargetLevel playersPerGame, TargetLevel gamesPerLevel) {
         TargetLevel playersPerLevel = new TargetLevel();
         for (TargetLevel.Distribution d1 : playersPerGame.distribution) {
-            TargetLevel.Distribution d2 = gamesPerLevel.get(d1.level);
+            TargetLevel.Distribution d2 = gamesPerLevel.getOrCreate(d1.level);
             TargetLevel.Distribution new_d = playersPerLevel.getOrCreate(d1.level);
             new_d.count = d1.count * d2.count;
         }
@@ -232,10 +235,10 @@ class TeamBuilder {
 
     private void computeDistribution() throws Exception {
         // AJ35:AJ39
-        TargetLevel playersPerGame = getPlayersPerLevel();
+        playersPerGame = getPlayersPerLevel();
         System.out.println("playersPerGame: " + playersPerGame);
         // AI35:AI39
-        TargetLevel gamesPerLevel = countGamesPerLevel();
+        gamesPerLevel = countGamesPerLevel();
         System.out.println("gamesPerLevel: " + gamesPerLevel);
         // AL35:AL39
         TargetLevel appearancesPerLevel = computeAppearancesPerLevel(playersPerGame, gamesPerLevel);
@@ -279,14 +282,45 @@ class TeamBuilder {
                 d.count /= d2.count;
             }
         }
-        System.out.println("norm: " + sumLevel);
+        System.out.println("norm: " + norm);
 
         // AG4:AL24
         for (TargetLevel l : playerLevels) {
             for (TargetLevel.Distribution d : l.distribution) {
-                d.count *= norm.get(d.level).count;
-                d.count = Math.min(d.count, gamesPerLevel.get(d.level).count);
+                d.count = Math.round(d.count * norm.getOrCreate(d.level).count);
+                d.count = Math.min(d.count, gamesPerLevel.getOrCreate(d.level).count);
             }
+        }
+
+        System.out.println("Player games");
+        for (TargetLevel l : playerLevels) {
+            System.out.println(l);
+        }
+
+        List<TargetLevel> orgPlayerLevels = getPlayerLevels();
+        distribution = new ArrayList<>();
+        for (Level typeOfGame : repo.getLevels()) {
+            TargetLevel t = new TargetLevel();
+            for (Level typeOfPlayer : repo.getLevels()) {
+                TargetLevel.Distribution d = t.getOrCreate(typeOfPlayer);
+                // Scan all players
+                for (int i = 0; i < orgPlayerLevels.size(); i++) {
+                    TargetLevel org = orgPlayerLevels.get(i);
+                    TargetLevel lev = playerLevels.get(i);
+                    if (org.getBestMatchLevel() == typeOfPlayer) {
+                        if (lev.get(typeOfGame) == null)
+                            continue;
+                        d.count += lev.get(typeOfGame).count;
+                    }
+                }
+                d.count /= gamesPerLevel.get(typeOfGame).count;
+                d.count = Math.round(d.count);
+            }
+            distribution.add(new Pair<>(typeOfGame, t));
+        }
+        System.out.println("Player distribution:");
+        for (Pair<Level, TargetLevel> d : distribution) {
+            System.out.println(d.first + " : " + d.second);
         }
     }
 

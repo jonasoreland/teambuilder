@@ -377,7 +377,6 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
             p.guest = Boolean.parseBoolean(record.get("guest"));
             p = repo.add(p);
             Date d = formatter.parse(record.get("date"));
-            System.out.println(p + " - " + record.get("target"));
             TargetLevel level = TargetLevel.parseJson(repo, record.get("target"));
             repo.addTarget(p, level, d);
         }

@@ -88,6 +88,7 @@ public class TargetLevel {
             d = new Distribution();
             d.level = l;
             d.count = 0;
+            distribution.add(d);
         }
         return d;
     }
@@ -115,5 +116,19 @@ public class TargetLevel {
         for (Distribution d : distribution) {
             d.count /= sum;
         }
+    }
+    public Level getBestMatchLevel() {
+        double sum = 0;
+        for (Distribution d : distribution) {
+            sum += d.count;
+        }
+        sum /= 2;
+        for (Distribution d : distribution) {
+            if (d.count >= sum) {
+                return d.level;
+            }
+            sum -= d.count;
+        }
+        return null;
     }
 }

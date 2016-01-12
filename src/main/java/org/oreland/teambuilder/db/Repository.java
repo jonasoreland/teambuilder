@@ -56,6 +56,7 @@ public class Repository {
                 rep.addParticipant(new_a, p);
             }
         }
+        rep.levels.addAll(this.levels);
         return rep;
     }
 
@@ -64,8 +65,9 @@ public class Repository {
     }
 
     public void addLevel(Level l) {
-        if (Level.parse(this, l.name) == null)
+        if (Level.parse(this, l.name) == null) {
             levels.add(l);
+        }
     }
 
     public Collection<Player> getPlayers() {
