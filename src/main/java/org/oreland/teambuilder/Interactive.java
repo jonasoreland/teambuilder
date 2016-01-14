@@ -317,7 +317,7 @@ class Interactive {
             // ctx.myclub.set(ctx, ctx.csv);
             ctx.myclub.load(ctx);
         }
-        new TeamBuilder(ctx.repo).plan(ctx);
+        new TeamBuilder(ctx.repo).planGames(ctx);
 
     }
 }

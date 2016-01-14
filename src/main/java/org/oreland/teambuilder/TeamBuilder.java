@@ -28,7 +28,12 @@ class TeamBuilder {
         this.repo = repo.clone();
     }
 
-    public void plan(Context ctx) throws Exception {
+    public void planSeason(Context ctx) throws Exception {
+        // 1. compute how to construct teams
+        computeDistribution();
+    }
+
+    public void planGames(Context ctx) throws Exception {
         // 1. compute how to construct teams
         computeDistribution();
 
@@ -242,19 +247,18 @@ class TeamBuilder {
         System.out.println("gamesPerLevel: " + gamesPerLevel);
         // AL35:AL39
         TargetLevel appearancesPerLevel = computeAppearancesPerLevel(playersPerGame, gamesPerLevel);
-        System.out.println("apperancesPerLevel: " + appearancesPerLevel);
 
         // AI40
         double totalAppearances = 0; // total "appearances"
         for (TargetLevel.Distribution d : appearancesPerLevel.distribution) {
             totalAppearances += d.count;
         }
-        System.out.println("totalAppearances: " + totalAppearances);
 
         List<TargetLevel> playerLevels = normalize(getPlayerLevels());
 
         // D25
         double sumGamesPerWeek = playerLevels.size(); // TODO
+
         // U4:Y24
         for (TargetLevel l : playerLevels) {
             for (TargetLevel.Distribution d : l.distribution) {
@@ -270,7 +274,6 @@ class TeamBuilder {
                 sumLevel.getOrCreate(d.level).count += d.count;
             }
         }
-        System.out.println("sumLevel: " + sumLevel);
 
         // AA4:AE4
         TargetLevel norm = new TargetLevel(appearancesPerLevel);
@@ -282,7 +285,6 @@ class TeamBuilder {
                 d.count /= d2.count;
             }
         }
-        System.out.println("norm: " + norm);
 
         // AG4:AL24
         for (TargetLevel l : playerLevels) {
@@ -290,11 +292,6 @@ class TeamBuilder {
                 d.count = Math.round(d.count * norm.getOrCreate(d.level).count);
                 d.count = Math.min(d.count, gamesPerLevel.getOrCreate(d.level).count);
             }
-        }
-
-        System.out.println("Player games");
-        for (TargetLevel l : playerLevels) {
-            System.out.println(l);
         }
 
         List<TargetLevel> orgPlayerLevels = getPlayerLevels();
