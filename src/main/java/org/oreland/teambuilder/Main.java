@@ -75,7 +75,7 @@ public class Main {
 
         if (plan) {
             TeamBuilder builder = new TeamBuilder(ctx.repo);
-            builder.planGames(ctx);
+            builder.planWeekendGames(ctx);
         }
 
         // then save to file

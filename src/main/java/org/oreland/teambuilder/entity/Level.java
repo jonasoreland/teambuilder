@@ -42,4 +42,10 @@ public class Level {
             return levels.iterator().next();
         return null;
     }
+
+    public int compare(Repository repo, Level level) {
+        int a = repo.getLevelIndex(this);
+        int b = repo.getLevelIndex(level);
+        return a - b;
+    }
 }

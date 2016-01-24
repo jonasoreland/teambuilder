@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Created by jonas on 10/4/15.
@@ -62,6 +63,10 @@ public class Repository {
 
     public Iterable<Level> getLevels() {
         return levels;
+    }
+
+    public Iterable<Level> getLevelsReverse() {
+        return In.reverse(levels);
     }
 
     public void addLevel(Level l) {
@@ -315,5 +320,49 @@ public class Repository {
                 System.out.println("\tinvited: " + i);
             }
         }
+    }
+
+    public static class In {
+        public static final <T> Iterable<T> reverse(final List<T> list) {
+            return new ListReverseIterable<T>(list);
+        }
+
+        static class ListReverseIterable<T> implements Iterable<T> {
+            private final List<T> mList;
+
+            public ListReverseIterable(final List<T> list) {
+                mList = list;
+            }
+
+            public Iterator<T> iterator() {
+                return new Iterator<T>() {
+                    final ListIterator<T> it = mList.listIterator(mList.size());
+
+                    public boolean hasNext() {
+                        return it.hasPrevious();
+                    }
+
+                    public T next() {
+                        return it.previous();
+                    }
+
+                    public void remove() {
+                        it.remove();
+                    }
+                };
+            }
+        }
+    }
+
+    public int getLevelIndex(Level level) {
+        int pos = 0;
+        for (Level l : getLevels()) {
+            if (l == level)
+                return pos;
+            pos++;
+        }
+        Object o = null;
+        o.toString();
+        return 0;
     }
 }

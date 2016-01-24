@@ -131,4 +131,30 @@ public class TargetLevel {
         }
         return null;
     }
+
+    void add (double count) {
+        for (Distribution d : distribution) {
+            d.count += count;
+        }
+    }
+
+    public Level getNextGameLevel(TargetLevel played) {
+        TargetLevel tl = new TargetLevel(this);
+        for (Distribution d : played.distribution) {
+            Distribution d2 = tl.get(d.level);
+            while (d.count >= d2.count) {
+                tl.add(1);
+            }
+            d2.count -= d.count;
+        }
+        Level l = null;
+        double max = 0;
+        for (Distribution d : tl.distribution) {
+            if (d.count > max) {
+                l = d.level;
+                max = d.count;
+            }
+        }
+        return l;
+    }
 }

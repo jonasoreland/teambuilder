@@ -38,7 +38,8 @@ class Interactive {
             choices.add("Quit");
             choices.add("Synchronize (download from MyClub)");
             choices.add("Run statistics and generate report (on downloaded data)");
-            choices.add("Construct teams for upcoming games");
+            choices.add("Construct teams for next weekend games");
+            choices.add("Construct teams for season");
             builder.setChoices(choices);
             Dialog.Result result = builder.build().show();
             switch (result.intResult) {
@@ -51,7 +52,10 @@ class Interactive {
                     statistics();
                     break;
                 case 4:
-                    plan();
+                    plan(true, false);
+                    break;
+                case 5:
+                    plan(false, true);
                     break;
             }
         }
@@ -302,7 +306,7 @@ class Interactive {
         }
     }
 
-    private void plan() throws Exception {
+    private void plan(boolean weekend, boolean abstractSeason) throws Exception {
         boolean sync = false;
         ctx.myclub.init(ctx.prop);
         if (sync) {
@@ -317,7 +321,9 @@ class Interactive {
             // ctx.myclub.set(ctx, ctx.csv);
             ctx.myclub.load(ctx);
         }
-        new TeamBuilder(ctx.repo).planGames(ctx);
-
+        if (weekend)
+            new TeamBuilder(ctx.repo).planWeekendGames(ctx);
+        if (abstractSeason)
+            new TeamBuilder(ctx.repo).planAbstractSeason(ctx);
     }
 }

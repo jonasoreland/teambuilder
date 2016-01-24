@@ -28,6 +28,20 @@ public class Player {
         return "[ " + first_name + " " + last_name + " ]";
     }
 
+    @Override
+    public boolean equals (Object o) {
+        if (! (o instanceof Player))
+            return false;
+        Player p = (Player)o;
+        return first_name.equals(p.first_name) &&
+               last_name.equals(p.last_name);
+    }
+
+    @Override
+    public int hashCode() {
+        return first_name.hashCode() + last_name.hashCode();
+    }
+
     static public class LevelHistoryEntry {
         public Date date;
         public TargetLevel level;
@@ -62,6 +76,7 @@ public class Player {
     public boolean guest;
     public Type type;
     public TargetLevel target_level;
+    public TargetLevel games_level = new TargetLevel();
     public List<LevelHistoryEntry> level_history = new ArrayList<>();
 
     /**
@@ -77,6 +92,9 @@ public class Player {
             }
         }
         games_played.add(act);
+        if (act.type == Activity.Type.GAME && act.level != null) {
+            games_level.getOrCreate(act.level).count++;
+        }
     }
 
     public void add(Activity.Invitation invitation) {
