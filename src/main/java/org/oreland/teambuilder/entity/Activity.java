@@ -1,5 +1,6 @@
 package org.oreland.teambuilder.entity;
 
+import java.lang.annotation.Target;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,6 +22,15 @@ public class Activity {
         a.level = level;
         a.time = time;
         return a;
+    }
+
+    public TargetLevel getDistribution() {
+        TargetLevel l = new TargetLevel();
+        for (Participant p : participants) {
+            l.getOrCreate(p.player.target_level.getBestMatchLevel()).count++;
+        }
+
+        return l;
     }
 
     public enum Type {
@@ -137,10 +147,8 @@ public class Activity {
     }
 
     public void add(Participant part) {
-        for (Participant p : participants) {
-            if (p.player == part.player)
-                return;
-        }
+        if (hasParticipant(part.player))
+            return;
         participants.add(part);
     }
 
@@ -150,5 +158,13 @@ public class Activity {
                 return;
         }
         invitations.add(invitation);
+    }
+
+    public boolean hasParticipant(Player player) {
+        for (Participant p : participants) {
+            if (p.player == player)
+                return true;
+        }
+        return false;
     }
 }

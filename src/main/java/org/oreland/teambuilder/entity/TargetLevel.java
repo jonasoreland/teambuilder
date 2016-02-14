@@ -22,8 +22,8 @@ public class TargetLevel {
     public TargetLevel() {
     }
 
-    public TargetLevel(TargetLevel target_level) {
-        for (Distribution d : target_level.distribution) {
+    public TargetLevel(TargetLevel src) {
+        for (Distribution d : src.distribution) {
             Distribution new_d = getOrCreate(d.level);
             new_d.count = d.count;
         }
@@ -43,7 +43,6 @@ public class TargetLevel {
                 Level level = Level.parseOrCreate(repo, name);
                 Distribution dist = target.getOrCreate(level);
                 dist.count += count;
-                target.distribution.add(dist);
             }
             return target;
         } catch (Exception ex) {
@@ -97,10 +96,12 @@ public class TargetLevel {
         StringBuilder str = new StringBuilder();
         str.append("[ ");
         for (Distribution d : distribution) {
-            str.append(d.level);
-            str.append(":");
-            str.append(d.count);
-            str.append(" ");
+            if (d.count > 0) {
+                str.append(d.level);
+                str.append(":");
+                str.append(d.count);
+                str.append(" ");
+            }
         }
         str.append("]");
         return str.toString();

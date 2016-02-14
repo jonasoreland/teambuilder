@@ -1,34 +1,64 @@
 package org.oreland.teambuilder;
 
-
 import org.oreland.teambuilder.db.Filter;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
-import org.oreland.teambuilder.sync.Synchronizer;
 import org.oreland.teambuilder.ui.Dialog;
 import org.oreland.teambuilder.ui.DialogBuilder;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
 class TeamBuilder {
+
+    class ScoredPlayer {
+        Player player;
+        TargetLevel orgTargetLevel = new TargetLevel();       // org target games per level (from MyClub)
+        TargetLevel targetGamesPerLevel = new TargetLevel();  // target games per level
+        TargetLevel gamesPlayed = new TargetLevel();          // games played per level
+
+        int trained_last_period; // 1) did player train sufficiently last period, 1 = yes
+        int played_last_period;  // 2) did player play sufficiently games last periond, 1 = no
+        Level optimalNextGame;   // 3) what is optimal next level for player
+
+        ScoredPlayer(Player p) {
+            this.player = p;
+
+            for (Activity g : p.games_played) {
+                if (g.type == Activity.Type.TRAINING)
+                    continue;
+                if (g.type == Activity.Type.REQUEST)
+                    continue;
+                if (g.level != null) {
+                    gamesPlayed.getOrCreate(g.level).count++;
+                }
+            }
+            orgTargetLevel = new TargetLevel(p.target_level);
+        }
+
+        public int getGamesPlayed() {
+            int sum = 0;
+            for (TargetLevel.Distribution d : gamesPlayed.distribution) {
+                sum += d.count;
+            }
+            return sum;
+        }
+    };
 
     private final Repository repo;
     private TargetLevel playersPerGame;
     private TargetLevel gamesPerLevel;
     private List<Pair<Level, TargetLevel>> distribution;
+    private List<ScoredPlayer> scoredPlayers;
 
     public TeamBuilder(Repository repo) {
         this.repo = repo.clone();
@@ -48,42 +78,63 @@ class TeamBuilder {
         // 3. compute how to construct teams
         computeDistribution();
 
-        // 4. copy out games and sort them according to level
-        List<Activity> games = new ArrayList<>();
-        for (Activity a : repo.getActivities()) {
-            games.add(a);
-        }
+        for (ScoredPlayer p : getScoredPlayers()) {
+            double underflow = 0;
+            for (Level l : repo.getLevelsReverse()) {
+                // add games per level upp until target
 
-        // sort games according to Level, start with "hardest"
-        Collections.sort(games, new Comparator<Activity>() {
-            @Override
-            public int compare(Activity a1, Activity a2) {
-                return -a1.level.compare(repo, a2.level);
+                // player should not play any such games
+                if (p.targetGamesPerLevel.get(l) == null)
+                    continue;
+
+                double played = p.gamesPlayed.getOrCreate(l).count;
+                double target = p.targetGamesPerLevel.get(l).count;
+                for (double i = played; i < target + underflow; i++) {
+                    Activity a = findGameForPlayer(p.player, l);
+                    if (a == null) {
+                        underflow = target + underflow - i;
+                        break;
+                    }
+                    repo.addParticipant(a, p.player);
+                }
             }
-        });
-
-
-        // 4. compute teams
-        for (Activity a : games) {
-            // do each game independently...
-            List<Activity> list = new ArrayList<>();
-            list.add(a);
-            computeTeams(list);
-            printTeams(list);
         }
+
+        // 4. print teams
+        printTeams(repo.getActivities());
 
         // 5. print stats
-        HashMap<Level, List<Player>> playersPerLevel = splitPlayersPerLevel();
-        for (List<Player> a : playersPerLevel.values()) {
-            for (Player p : a) {
-                System.out.println(p + ", played: " + p.games_level + ", target: " + p.target_level);
-            }
+        for (ScoredPlayer p : getScoredPlayers()) {
+            System.out.println(p.player + ", played: " + p.player.games_level + ", target: " + p.player.target_level +
+            ", computed: " + p.targetGamesPerLevel);
         }
     }
 
-    private void printTeams(List<Activity> list) {
+    private Activity findGameForPlayer(Player player, Level l) {
+        List<Activity> list = new ArrayList<>();
+        for (Activity a : repo.getActivities()) {
+            if (a.level != l)
+                continue;
+            if (a.hasParticipant(player))
+                continue;
+            list.add(a);
+        }
+
+        // pick games with least players
+        Activity game = null;
         for (Activity a : list) {
-            System.out.println("*** " + a + ", " + a.level);
+            if (game == null)
+                game = a;
+            if (a.participants.size() < game.participants.size())
+                game = a;
+        }
+
+        return game;
+    }
+
+    private void printTeams(Iterable<Activity> list) {
+        for (Activity a : list) {
+            System.out.println("*** " + a + ", " + a.level + ", " + a.getDistribution());
             for (Activity.Participant p : a.participants) {
                 System.out.println(p.player + ", " + p.player.target_level + ", played: " + p.player.games_level + " => next: " +
                         p.player.target_level.getNextGameLevel(p.player.games_level));
@@ -112,6 +163,8 @@ class TeamBuilder {
                 a.type = Activity.Type.GAME;
                 a.date = today;
                 repo.add(a);
+                cal.add(Calendar.DAY_OF_YEAR, 1);
+                today = cal.getTime();
             }
         }
     }
@@ -309,18 +362,29 @@ class TeamBuilder {
         return playersPerLevel;
     }
 
-    List<TargetLevel> getPlayerLevels() {
-        List<TargetLevel> levels = new ArrayList<>();
+    List<ScoredPlayer> getScoredPlayers() {
+        if (scoredPlayers != null) {
+            return scoredPlayers;
+        }
+        scoredPlayers = new ArrayList<>();
         for (Player p : repo.getPlayers()) {
             if (p.type != Player.Type.PLAYER)
                 continue;
             if (p.target_level != null) {
-                levels.add(new TargetLevel(p.target_level));
+                scoredPlayers.add(new ScoredPlayer(p));
             } else {
                 System.out.println(p + " has no target level!");
             }
         }
-        return levels;
+        Collections.sort(scoredPlayers, new Comparator<ScoredPlayer>() {
+            @Override
+            public int compare(ScoredPlayer p1, ScoredPlayer p2) {
+                int c1 = repo.getLevelIndex(p1.orgTargetLevel.getBestMatchLevel());
+                int c2 = repo.getLevelIndex(p2.orgTargetLevel.getBestMatchLevel());
+                return c2 - c1;
+            }
+        });
+        return scoredPlayers;
     }
 
     private void computeDistribution() throws Exception {
@@ -329,7 +393,7 @@ class TeamBuilder {
         System.out.println("playersPerGame: " + playersPerGame);
         // AI35:AI39
         gamesPerLevel = countGamesPerLevel();
-        System.out.println("gamesPerLevel: " + gamesPerLevel);
+        System.out.println("targetGamesPerLevel: " + gamesPerLevel);
         // AL35:AL39
         TargetLevel appearancesPerLevel = computeAppearancesPerLevel(playersPerGame, gamesPerLevel);
 
@@ -339,14 +403,15 @@ class TeamBuilder {
             totalAppearances += d.count;
         }
 
-        List<TargetLevel> playerLevels = normalize(getPlayerLevels());
+        List<ScoredPlayer> playerLevels = normalize(getScoredPlayers());
 
         // D25
         double sumGamesPerWeek = playerLevels.size(); // TODO
 
         // U4:Y24
-        for (TargetLevel l : playerLevels) {
-            for (TargetLevel.Distribution d : l.distribution) {
+        for (ScoredPlayer p : playerLevels) {
+            p.targetGamesPerLevel = new TargetLevel(p.orgTargetLevel);
+            for (TargetLevel.Distribution d : p.targetGamesPerLevel.distribution) {
                 d.count *= totalAppearances;
                 d.count /= sumGamesPerWeek;
             }
@@ -354,8 +419,8 @@ class TeamBuilder {
 
         // U25:Y25
         TargetLevel sumLevel = new TargetLevel();
-        for (TargetLevel l : playerLevels) {
-            for (TargetLevel.Distribution d : l.distribution) {
+        for (ScoredPlayer p : playerLevels) {
+            for (TargetLevel.Distribution d : p.targetGamesPerLevel.distribution) {
                 sumLevel.getOrCreate(d.level).count += d.count;
             }
         }
@@ -372,30 +437,29 @@ class TeamBuilder {
         }
 
         // AG4:AL24
-        for (TargetLevel l : playerLevels) {
-            for (TargetLevel.Distribution d : l.distribution) {
+        for (ScoredPlayer p : playerLevels) {
+            for (TargetLevel.Distribution d : p.targetGamesPerLevel.distribution) {
                 d.count = Math.round(d.count * norm.getOrCreate(d.level).count);
                 d.count = Math.min(d.count, gamesPerLevel.getOrCreate(d.level).count);
             }
         }
 
-        List<TargetLevel> orgPlayerLevels = getPlayerLevels();
         distribution = new ArrayList<>();
         for (Level typeOfGame : repo.getLevels()) {
             TargetLevel t = new TargetLevel();
             for (Level typeOfPlayer : repo.getLevels()) {
                 TargetLevel.Distribution d = t.getOrCreate(typeOfPlayer);
                 // Scan all players
-                for (int i = 0; i < orgPlayerLevels.size(); i++) {
-                    TargetLevel org = orgPlayerLevels.get(i);
-                    TargetLevel lev = playerLevels.get(i);
-                    if (org.getBestMatchLevel() == typeOfPlayer) {
-                        if (lev.get(typeOfGame) == null)
+                for (ScoredPlayer p : playerLevels) {
+                    if (p.orgTargetLevel.getBestMatchLevel() == typeOfPlayer) {
+                        if (p.targetGamesPerLevel.get(typeOfGame) == null)
                             continue;
-                        d.count += lev.get(typeOfGame).count;
+                        d.count += p.targetGamesPerLevel.get(typeOfGame).count;
                     }
                 }
-                d.count /= gamesPerLevel.get(typeOfGame).count;
+
+                if (gamesPerLevel.get(typeOfGame) != null)
+                    d.count /= gamesPerLevel.get(typeOfGame).count;
                 d.count = Math.round(d.count);
             }
             distribution.add(new Pair<>(typeOfGame, t));
@@ -414,9 +478,9 @@ class TeamBuilder {
         return null;
     }
 
-    List<TargetLevel> normalize(List<TargetLevel> playerLevels) {
-        for (TargetLevel l : playerLevels) {
-            l.normalize();
+    List<ScoredPlayer> normalize(List<ScoredPlayer> playerLevels) {
+        for (ScoredPlayer l : playerLevels) {
+            l.orgTargetLevel.normalize();
         }
         return playerLevels;
     }
@@ -454,20 +518,10 @@ class TeamBuilder {
         }
     }
 
-    static class ScoredPlayer {
-        Player player;
-        int trained_last_period; // 1) did player train sufficiently last period, 1 = yes
-        int played_last_period;  // 2) did player play sufficiently games last periond, 1 = no
-        Level optimalNextGame;   // 3) what is optimal next level for player
-        int games_played;        // 4) how many games have he/she played
-    };
-
     private List<Player> pickPlayersForGame(Level l, List<Player> playersOfLevel, int count, List<Activity> games) {
         List<Player> list = new ArrayList<>();
         List<ScoredPlayer> sort = new ArrayList<>();
-        for (Player p : playersOfLevel) {
-            sort.add(GetPlayerScore(p));
-        }
+        sort.addAll(scoredPlayers);
         Collections.sort(sort, new Comparator<ScoredPlayer>() {
             @Override
             public int compare(ScoredPlayer p1, ScoredPlayer p2) {
@@ -485,8 +539,8 @@ class TeamBuilder {
                 if (p1.optimalNextGame != p2.optimalNextGame) {
                     return repo.getLevelIndex(p2.optimalNextGame) - repo.getLevelIndex(p1.optimalNextGame);
                 }
-                if (p1.games_played != p2.games_played) {
-                    return p1.games_played - p2.games_played;
+                if (p1.getGamesPlayed() != p2.getGamesPlayed()) {
+                    return p1.getGamesPlayed() - p2.getGamesPlayed();
                 }
 
                 return 0;
@@ -499,14 +553,6 @@ class TeamBuilder {
             count--;
         }
         return list;
-    }
-
-    private ScoredPlayer GetPlayerScore(Player p) {
-        ScoredPlayer sp = new ScoredPlayer();
-        sp.player = p;
-        sp.optimalNextGame = p.target_level.getNextGameLevel(p.games_level);
-        sp.games_played = p.games_played.size();
-        return sp;
     }
 
     private HashMap<Level, List<Player>> splitPlayersPerLevel() {
