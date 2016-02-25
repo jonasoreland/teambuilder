@@ -640,8 +640,10 @@ public class MyClub extends DefaultSynchronizer {
                         invitation.response = Activity.Response.parse(e.attr("data-response"));
                     }
                 }
-                if (invitation.response == null)
-                    throw new ParseException("Unable to find response in: " + col.toString(), 0);
+                if (invitation.response == null) {
+                    System.err.println("Unable to find response in: " + col.toString());
+		    invitation.response = Activity.Response.parse("maybe");
+		}
             }
             repo.addInvitation(activity, invitation);
         }
