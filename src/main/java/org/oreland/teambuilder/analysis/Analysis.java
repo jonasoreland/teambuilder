@@ -283,7 +283,9 @@ public class Analysis {
                 }
                 for (Level l : repo.getLevels()) {
                     TargetLevel.Distribution d = tl.get(l);
-                    rec.add(d.level.toString() + ":" + Integer.toString((int) d.count));
+                    if (d != null) {
+                        rec.add(d.level.toString() + ":" + Integer.toString((int) d.count));
+                    }
                 }
                 playerPrinter.printRecord(rec);
             }
