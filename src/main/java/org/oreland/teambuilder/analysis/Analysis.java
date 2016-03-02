@@ -11,6 +11,8 @@ import org.oreland.teambuilder.entity.Player;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -50,11 +52,8 @@ public class Analysis {
 
     private void mergeSplitActivities() {
         List<Activity> new_list = new ArrayList<>();
-        {
-            Iterator<Activity> a = getCompletedTraining();
-            while (a.hasNext()) {
-                new_list.add(a.next());
-            }
+        for (Activity a : getCompletedTraining()) {
+            new_list.add(a);
         }
         Collections.sort(new_list, new Comparator<Activity>() {
             @Override
@@ -119,10 +118,10 @@ public class Analysis {
     }
 
     public void report(CSVPrinter printer, String team, String period) throws Exception {
-        int cnt_training = count(getCompletedTraining());
+        int cnt_training = count(getCompletedTraining().iterator());
         Stat<Activity> barn_per_tranining = new Stat<Activity>(getCompletedTraining(), new PerMatch(Player.Type.PLAYER));
         Stat<Player> training_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.TRAINING));
-        int cnt_games = count(getCompletedGames());
+        int cnt_games = count(getCompletedGames().iterator());
         if (cnt_training == 0 && cnt_games == 0)
             return;
         Stat<Player> games_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.GAME));
@@ -158,14 +157,10 @@ public class Analysis {
 
         // For Narvaro, if training has 0 invitations then everyone is invited
         {
-            Iterator<Activity> it = getCompletedTraining();
-            while (it.hasNext()) {
-                Activity act = it.next();
+            for (Activity act : getCompletedTraining()) {
                 if (countInvitedPlayers(act) == 0) {
-                    Iterator<Player> it2 = getPlayers();
-                    while (it2.hasNext()) {
-                        Player p = it2.next();
-                        Activity.Invitation inv = new Activity.Invitation();
+                    for (Player p : getPlayers()) {
+                        Activity.Invitation inv = new Activity.Invitation(act);
                         inv.player = p;
                         repo.addInvitation(act, inv);
                     }
@@ -175,12 +170,10 @@ public class Analysis {
 
         // For Narvaro, if player participated, player was also invited
         {
-            Iterator<Player> it2 = getPlayers();
-            while (it2.hasNext()) {
-                Player p = it2.next();
+            for (Player p : getPlayers()) {
                 for (Activity act : p.games_played) {
                     if (!was_invited(p, act)) {
-                        Activity.Invitation inv = new Activity.Invitation();
+                        Activity.Invitation inv = new Activity.Invitation(act);
                         inv.player = p;
                         repo.addInvitation(act, inv);
                     }
@@ -192,19 +185,15 @@ public class Analysis {
         segment.add(new ArrayList<Player>());
         segment.add(new ArrayList<Player>());
         segment.add(new ArrayList<Player>());
-        {
-            Iterator<Player> it = getPlayers();
+        for (Player p : getPlayers()) {
             Measure<Player> narvaro = new Narvaro();
-            while (it.hasNext()) {
-                Player p = it.next();
-                double n = narvaro.getValue(p);
-                if (n >= LIMIT_VERY)
-                    segment.get(0).add(p);
-                else if (n < LIMIT_LITTLE)
-                    segment.get(2).add(p);
-                else
-                    segment.get(1).add(p);
-            }
+            double n = narvaro.getValue(p);
+            if (n >= LIMIT_VERY)
+                segment.get(0).add(p);
+            else if (n < LIMIT_LITTLE)
+                segment.get(2).add(p);
+            else
+                segment.get(1).add(p);
         }
 
         String names[] = new String[3];
@@ -212,7 +201,7 @@ public class Analysis {
         names[1] = "Normal intresserade";
         names[2] = "Lite intresserade";
         for (int i = 0; i < segment.size(); i++) {
-            System.out.println(names[i] + ": " + segment.get(i).size() + " " + (int) (100 * segment.get(i).size() / count(getPlayers())) + "%");
+            System.out.println(names[i] + ": " + segment.get(i).size() + " " + (int) (100 * segment.get(i).size() / count(getPlayers().iterator())) + "%");
             if (segment.get(i).size() == 0) {
                 if (printer != null) {
                     rec.add(Integer.toString(0));
@@ -221,17 +210,18 @@ public class Analysis {
                 }
                 continue;
             }
-            Stat<Player> s_match_per_barn = new Stat<Player>(segment.get(i).iterator(), new PerPlayer(Activity.Type.GAME));
-            Stat<Player> s_training_per_barn = new Stat<Player>(segment.get(i).iterator(), new PerPlayer(Activity.Type.TRAINING));
+            Stat<Player> s_match_per_barn = new Stat<Player>(segment.get(i), new PerPlayer(Activity.Type.GAME));
+            Stat<Player> s_training_per_barn = new Stat<Player>(segment.get(i), new PerPlayer(Activity.Type.TRAINING));
             System.out.println("Match per barn: " + s_match_per_barn);
             System.out.println("Träning per barn: " + s_training_per_barn);
-            System.out.println("Cup per barn: " + new Stat<Player>(segment.get(i).iterator(), new PerPlayer(Activity.Type.CUP)));
+            System.out.println("Cup per barn: " + new Stat<Player>(segment.get(i), new PerPlayer(Activity.Type.CUP)));
             if (printer != null) {
                 rec.add(Integer.toString(segment.get(i).size()));
                 rec.add(s_training_per_barn.averageToString());
                 rec.add(s_match_per_barn.averageToString());
             }
         }
+
         if (printer != null) {
             printer.printRecord(rec);
         }
@@ -253,9 +243,8 @@ public class Analysis {
         DescriptiveStatistics stat = new DescriptiveStatistics();
         //SummaryStatistics stat = new SummaryStatistics();
 
-        public Stat(Iterator<T> iterator, Measure<T> measure) {
-            while (iterator.hasNext()) {
-                T t = iterator.next();
+        public Stat(Iterable<T> iterator, Measure<T> measure) {
+            for(T t : iterator) {
                 stat.addValue(measure.getValue(t));
             }
         }
@@ -281,7 +270,7 @@ public class Analysis {
     }
 
     public int countUngradedPlayers() {
-        return count(getUngradedPlayers());
+        return count(getUngradedPlayers().iterator());
     }
 
     private class BarnPerLedare extends Measure<Activity> {
@@ -346,8 +335,8 @@ public class Analysis {
         }
     }
 
-    private Iterator<Activity> getCompletedGames() {
-        return new FilteredIterator<>(repo.getActivities().iterator(), new Filter<Activity>() {
+    private Iterable<Activity> getCompletedGames() {
+        return new FilteredIterable<>(repo.getActivities(), new Filter<Activity>() {
             @Override
             public boolean OK(Activity activity) {
                 return activity.synced == true && activity.type == Activity.Type.GAME;
@@ -355,8 +344,8 @@ public class Analysis {
         });
     }
 
-    private Iterator<Activity> getCompletedTraining() {
-        return new FilteredIterator<>(repo.getActivities().iterator(), new Filter<Activity>() {
+    private Iterable<Activity> getCompletedTraining() {
+        return new FilteredIterable<>(repo.getActivities(), new Filter<Activity>() {
             @Override
             public boolean OK(Activity activity) {
                 return activity.synced == true && activity.type == Activity.Type.TRAINING;
@@ -371,8 +360,8 @@ public class Analysis {
         }
     };
 
-    private Iterator<Player> getPlayers() {
-        return new FilteredIterator<>(repo.getPlayers().iterator(), PlayerFilter);
+    private Iterable<Player> getPlayers() {
+        return new FilteredIterable<>(repo.getPlayers(), PlayerFilter);
     }
 
     private int countInvitedPlayers(Activity act) {
@@ -384,8 +373,8 @@ public class Analysis {
         return count;
     }
 
-    private Iterator<Player> getUngradedPlayers() {
-        return new FilteredIterator<>(repo.getPlayers().iterator(), new Filter<Player>() {
+    private Iterable<Player> getUngradedPlayers() {
+        return new FilteredIterable<>(repo.getPlayers(), new Filter<Player>() {
             @Override
             public boolean OK(Player player) {
                 return player.type == Player.Type.PLAYER && player.level_history.isEmpty();
@@ -393,50 +382,57 @@ public class Analysis {
         });
     }
 
-    private class FilteredIterator<T> implements Iterator<T> {
+    private class FilteredIterable<T> implements Iterable<T> {
 
         private final Iterator<T> all;
         private final Filter<T> filter;
         private T next = null;
 
-        FilteredIterator(Iterator<T> all, Filter<T> filter) {
-            this.all = all;
+        FilteredIterable(Iterable<T> all, Filter<T> filter) {
+            this.all = all.iterator();
             this.filter = filter;
         }
 
-        @Override
-        public boolean hasNext() {
-            next = getNext();
-            if (next != null)
-                return true;
-            return false;
-        }
-
-        @Override
-        public T next() {
-            if (next != null) {
-                T p = next;
-                next = null;
-                return p;
+        class MyIterator implements java.util.Iterator<T> {
+            @Override
+            public boolean hasNext() {
+                next = getNext();
+                if (next != null)
+                    return true;
+                return false;
             }
-            return getNext();
-        }
 
-        private T getNext() {
-            while (true) {
-                if (!all.hasNext())
-                    return null;
-                T p = all.next();
-                if (p == null)
-                    return null;
-                if (filter.OK(p))
+            @Override
+            public T next() {
+                if (next != null) {
+                    T p = next;
+                    next = null;
                     return p;
+                }
+                return getNext();
+            }
+
+            private T getNext() {
+                while (true) {
+                    if (!all.hasNext())
+                        return null;
+                    T p = all.next();
+                    if (p == null)
+                        return null;
+                    if (filter.OK(p))
+                        return p;
+                }
+            }
+
+            @Override
+            public void remove() {
+
             }
         }
 
         @Override
-        public void remove() {
-
+        public Iterator<T> iterator() {
+            return new MyIterator();
         }
     }
 }

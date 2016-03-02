@@ -80,6 +80,12 @@ public class Activity {
     }
 
     public static class Invitation {
+
+        public Invitation(Activity activity) {
+            this.activity = activity;
+        }
+
+        public Activity activity;
         public Player player;
         public Response response;
         public String response_comment;

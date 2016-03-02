@@ -40,7 +40,7 @@ public class Repository {
             Activity new_a = a.copy();  // shallow copy
             rep.add(new_a);
             for (Activity.Invitation inv : a.invitations) {
-                Activity.Invitation new_inv = new Activity.Invitation();
+                Activity.Invitation new_inv = new Activity.Invitation(new_a);
                 new_inv.invitation_date = inv.invitation_date;
                 new_inv.player = rep.getPlayer(inv.player.first_name, inv.player.last_name);
                 new_inv.response = inv.response;
@@ -238,6 +238,7 @@ public class Repository {
     public void addInvitation(Activity activity, Activity.Invitation invitation) {
         activity.add(invitation);
         invitation.player.add(invitation);
+
     }
 
     public List<Activity> selectActivities(Date startDate, Date endDate, Activity.Type type) {

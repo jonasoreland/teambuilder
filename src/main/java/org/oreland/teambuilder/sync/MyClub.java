@@ -624,7 +624,7 @@ public class MyClub extends DefaultSynchronizer {
             if (repo.getPlayer(p.first_name, p.last_name) == null) {
                 continue;
             }
-            Activity.Invitation invitation = new Activity.Invitation();
+            Activity.Invitation invitation = new Activity.Invitation(activity);
             invitation.player = repo.add(p);
             if (!columns.get(5).text().isEmpty())
                 invitation.invitation_date = formatter.parse(columns.get(5).text());

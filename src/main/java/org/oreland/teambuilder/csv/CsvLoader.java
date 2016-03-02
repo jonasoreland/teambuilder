@@ -263,9 +263,9 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd HH:ss");
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(getInvitationsFilename()));
         for (CSVRecord record : records) {
-            Activity.Invitation g = new Activity.Invitation();
             String game_id = record.get("game");
             Activity game = repo.getActivity(game_id);
+            Activity.Invitation g = new Activity.Invitation(game);
             Player p = new Player(record.get("first_name"), record.get("last_name"));
             p.type = Player.Type.parse(record.get("type"));
             g.player = repo.add(p);

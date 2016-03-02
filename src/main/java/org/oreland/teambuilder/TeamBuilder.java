@@ -290,7 +290,7 @@ class TeamBuilder {
                         "\nResponse: " + invitation.response_comment);
                 Dialog.Result result = builder.build().show();
                 for (Integer i : result.intResults) {
-                    Activity.Invitation inv = new Activity.Invitation();
+                    Activity.Invitation inv = new Activity.Invitation(null);
                     inv.player = invitation.player;
                     inv.response = Activity.Response.YES;
                     games.get(i - 1).invitations.add(inv);
