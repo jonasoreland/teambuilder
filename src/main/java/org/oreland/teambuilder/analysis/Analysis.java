@@ -276,12 +276,13 @@ public class Analysis {
                 }).iterator())));
                 rec.add(Integer.toString((int) (100 * new Narvaro().getValue(p))));
                 rec.add(Integer.toString((int) (100 * others.getValue(p))));
-                TargetLevel l = new TargetLevel();
+                TargetLevel tl = new TargetLevel();
                 for (Activity act : p.games_played) {
                     if (act.level != null)
-                        l.getOrCreate(act.level).count++;
+                        tl.getOrCreate(act.level).count++;
                 }
-                for (TargetLevel.Distribution d : l.distribution) {
+                for (Level l : repo.getLevels()) {
+                    TargetLevel.Distribution d = tl.get(l);
                     rec.add(d.level.toString() + ":" + Integer.toString((int) d.count));
                 }
                 playerPrinter.printRecord(rec);
