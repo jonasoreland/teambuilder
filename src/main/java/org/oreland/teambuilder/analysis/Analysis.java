@@ -140,6 +140,32 @@ public class Analysis {
         System.out.println("Barn per ledare match: " + barn_per_ledare_games);
         System.out.println("Barn per ledare träning: " + barn_per_ledare_training);
 
+        // Compute player2player matrix
+        HashMap<Player, HashSet<Player>> matrix = new HashMap<>();
+        for (Player p : getPlayers()) {
+            if (p.guest)
+                continue;
+            if (p.type != Player.Type.PLAYER)
+                continue;
+            HashSet<Player> set = new HashSet<>();
+            for (Activity act : p.games_played) {
+                if (act.type != Activity.Type.GAME)
+                    continue;
+                for (Activity.Participant part: act.participants) {
+                    if (part.player.guest)
+                        continue;
+                    if (part.player.type != Player.Type.PLAYER)
+                        continue;
+                    set.add(part.player);
+                }
+            }
+            matrix.put(p, set);
+        }
+
+        double[] buckets = new double[]{0.3, 0.6};
+        Hist<Player> played_with_others = new Hist<>(buckets, matrix.keySet(), new PlayedWithOthers(matrix));
+        System.out.println("Played with others: " + played_with_others.toString());
+
         List<String> rec = new ArrayList<>();
         if (printer != null) {
             rec.add(team);
@@ -259,6 +285,41 @@ public class Analysis {
 
         public String averageToString() {
             return String.format("%.2f", stat.getMean());
+        }
+    }
+
+    public class Hist<T> {
+
+        double count[];
+        double buckets[];
+        double total = 0;
+
+        public Hist(double buckets[], Iterable<T> iterator, Measure<T> measure) {
+            this.buckets = buckets;
+            int max = buckets.length - 1;
+            count = new double[buckets.length];
+            for(T t : iterator) {
+                total++;
+                double val = measure.getValue(t);
+                boolean found = false;
+                for (int i = 0; i < buckets.length - 1; i++) {
+                    if (val < buckets[i]) {
+                        found = true;
+                        count[i]++;
+                        break;
+                    }
+                }
+                if (!found)
+                    count[max]++;
+            }
+        }
+
+        public String toString() {
+            int max = buckets.length - 1;
+            StringBuilder sb = new StringBuilder();
+            sb.append(Integer.toString((int) (100 * count[0] / total)) + String.format("%% <%.1f ", buckets[0]));
+            sb.append(Integer.toString((int) (100 * count[max] / total)) + String.format("%% >%.1f", buckets[max]));
+            return sb.toString();
         }
     }
 
@@ -433,6 +494,23 @@ public class Analysis {
         @Override
         public Iterator<T> iterator() {
             return new MyIterator();
+        }
+    }
+
+    private class PlayedWithOthers extends Measure<Player> {
+        HashMap<Player, HashSet<Player>> matrix;
+        public PlayedWithOthers(HashMap<Player, HashSet<Player>> matrix) {
+            this.matrix = matrix;
+        }
+
+        @Override
+        public double getValue(Player player) {
+            HashSet<Player> set = matrix.get(player);
+            if (set == null) {
+                return 0;
+            }
+            double cnt = set.size();
+            return cnt / matrix.size();
         }
     }
 }

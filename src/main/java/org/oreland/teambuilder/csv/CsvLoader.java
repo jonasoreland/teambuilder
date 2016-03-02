@@ -321,6 +321,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
             Activity game = repo.getActivity(game_id);
             Player p = new Player(record.get("first_name"), record.get("last_name"));
             p.type = Player.Type.parse(record.get("type"));
+            p.guest = true;
             repo.addParticipant(game, repo.add(p));
         }
     }
