@@ -85,6 +85,7 @@ class Interactive {
 
         final Appendable out = new FileWriter(ctx.wd + "/report.csv");
         final CSVPrinter printer = Analysis.reportHeader(out);
+        final CSVPrinter playerPrinter = Analysis.playerHeader(new FileWriter(ctx.wd + "/player_report.csv"));
 
         List<Pair<Date, Date>> periods = choosePeriods(ctx, selection.periods);
 
@@ -96,7 +97,7 @@ class Interactive {
                     ctx.repo.reset();
                     ctx.csv.setPeriod(ctx, period);
                     ctx.csv.load(ctx);
-                    new Analysis(ctx.repo).report(printer, team.first.name, toString(MyClub.periodName2Dates(period.name)));
+                    new Analysis(ctx.repo).report(printer, playerPrinter, team.first.name, toString(MyClub.periodName2Dates(period.name)));
                 }
             }
         } else {
@@ -125,12 +126,13 @@ class Interactive {
                         }
                     });
                     Analysis a = new Analysis(ctx.repo);
-                    new Analysis(ctx.repo).report(printer, team.first.name, toString(user_period));
+                    new Analysis(ctx.repo).report(printer, playerPrinter, team.first.name, toString(user_period));
                 }
             }
 
         }
         printer.close();
+        playerPrinter.close();
     }
 
     private boolean Contains(Pair<Date, Date> period1, Pair<Date, Date> user_period) {

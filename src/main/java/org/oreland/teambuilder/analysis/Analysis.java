@@ -8,6 +8,7 @@ import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
+import org.oreland.teambuilder.entity.TargetLevel;
 import org.oreland.teambuilder.sync.Synchronizer;
 
 import java.util.ArrayList;
@@ -123,7 +124,16 @@ public class Analysis {
         return printer;
     }
 
-    public void report(CSVPrinter printer, String team, String period) throws Exception {
+    public static CSVPrinter playerHeader(Appendable out) throws Exception {
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader(
+            "lag", "period", "player",
+            "#träningar", "#match", "#cup",
+            "%närvaro", "spelat med %",
+            "level 0", "level 1", "level 2").print(out);
+        return printer;
+    }
+
+    public void report(CSVPrinter printer, CSVPrinter playerPrinter, String team, String period) throws Exception {
         int cnt_training = count(getCompletedTraining().iterator());
         Stat<Activity> barn_per_tranining = new Stat<Activity>(getCompletedTraining(), new PerMatch(Player.Type.PLAYER));
         Stat<Player> training_per_barn = new Stat<Player>(getPlayers(), new PerPlayer(Activity.Type.TRAINING));
@@ -150,7 +160,9 @@ public class Analysis {
         double[] buckets = new double[]{ PLAYED_WITH_FEW, PLAYED_WITH_MANY };
         Hist<Player> played_with_others = new Hist<>(buckets, getPlayers(), new PlayedWithOthers(getPlayers(), getPlayers()));
         System.out.println("Played with others: " + played_with_others.toString());
-
+        {
+            System.out.println("Played level: " + new FullHist<>(getPlayers(), new LevelsPerPlayer()).toString());
+        }
         List<String> rec = new ArrayList<>();
         if (printer != null) {
             rec.add(team);
@@ -236,6 +248,46 @@ public class Analysis {
         if (printer != null) {
             printer.printRecord(rec);
         }
+
+        if (playerPrinter != null) {
+            PlayedWithOthers others = new PlayedWithOthers(getPlayers(), getPlayers());
+            for (Player p : getPlayers()) {
+                rec = new ArrayList<>();
+                rec.add(team);
+                rec.add(period);
+                rec.add(p.toString());
+                rec.add(Integer.toString(count(new FilteredIterable<>(p.games_played, new Filter<Activity>() {
+                    @Override
+                    public boolean OK(Activity activity) {
+                        return activity.synced == true && activity.type == Activity.Type.TRAINING;
+                    }
+                }).iterator())));
+                rec.add(Integer.toString(count(new FilteredIterable<>(p.games_played, new Filter<Activity>() {
+                    @Override
+                    public boolean OK(Activity activity) {
+                        return activity.synced == true && activity.type == Activity.Type.GAME;
+                    }
+                }).iterator())));
+                rec.add(Integer.toString(count(new FilteredIterable<>(p.games_played, new Filter<Activity>() {
+                    @Override
+                    public boolean OK(Activity activity) {
+                        return activity.synced == true && activity.type == Activity.Type.CUP;
+                    }
+                }).iterator())));
+                rec.add(Integer.toString((int) (100 * new Narvaro().getValue(p))));
+                rec.add(Integer.toString((int) (100 * others.getValue(p))));
+                TargetLevel l = new TargetLevel();
+                for (Activity act : p.games_played) {
+                    if (act.level != null)
+                        l.getOrCreate(act.level).count++;
+                }
+                for (TargetLevel.Distribution d : l.distribution) {
+                    rec.add(d.level.toString() + ":" + Integer.toString((int) d.count));
+                }
+                playerPrinter.printRecord(rec);
+            }
+            playerPrinter.flush();
+        }
     }
 
     private boolean was_invited(Player p, Activity act) {
@@ -311,7 +363,36 @@ public class Analysis {
         }
     }
 
-    private int count(Iterator iterator) {
+    public class FullHist<T> {
+
+        double sum = 0;
+        double count = 0;
+        HashMap<Double, int[]> set = new HashMap<>();
+
+        public FullHist(Iterable<T> iterator, Measure<T> measure) {
+            for(T t : iterator) {
+                count++;
+                double val = measure.getValue(t);
+                sum += val;
+                if (!set.containsKey(val))
+                    set.put(val, new int[1]);
+                set.get(val)[0]++;
+            }
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (double d : set.keySet()) {
+                sb.append(Integer.toString((int) d));
+                sb.append(":");
+                sb.append(set.get(d)[0]);
+                sb.append(" ");
+            }
+            return sb.toString();
+        }
+    }
+
+    private static int count(Iterator iterator) {
         int count = 0;
         while (iterator.hasNext() && iterator.next() != null)
             count++;
@@ -516,6 +597,23 @@ public class Analysis {
             }
             double cnt = set.size();
             return cnt / matrix.size();
+        }
+    }
+
+    private class LevelsPerPlayer extends Measure<Player> {
+        Activity.Type type;
+
+        public LevelsPerPlayer() {
+        }
+
+        @Override
+        public double getValue(Player player) {
+            HashSet<Level> set = new HashSet<>();
+            for (Activity act : player.games_played) {
+                if (act.type == Activity.Type.GAME && act.level != null)
+                    set.add(act.level);
+            }
+            return set.size();
         }
     }
 }
