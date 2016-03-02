@@ -54,7 +54,7 @@ public class TargetLevel {
         JSONArray arr = new JSONArray();
         for (Distribution d : distribution) {
             JSONObject obj = new JSONObject();
-            obj.put(d.level.name, d.count);
+            obj.put(d.level.str, d.count);
             arr.put(obj);
         }
         JSONObject obj2 = new JSONObject();

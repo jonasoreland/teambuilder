@@ -6,6 +6,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.oreland.teambuilder.db.Filter;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.sync.Synchronizer;
 

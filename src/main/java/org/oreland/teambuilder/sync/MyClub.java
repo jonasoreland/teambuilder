@@ -534,7 +534,7 @@ public class MyClub extends DefaultSynchronizer {
         String description = doc.select("textarea[id=id_description]").first().text();
         Set<Level> match = new HashSet<>();
         for (Level l : repo.getLevels()) {
-            if (description.contains(l.name)) {
+            if (l.Match(description)) {
                 match.add(l);
             }
         }

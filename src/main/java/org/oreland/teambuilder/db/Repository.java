@@ -70,7 +70,7 @@ public class Repository {
     }
 
     public void addLevel(Level l) {
-        if (Level.parse(this, l.name) == null) {
+        if (Level.parse(this, l.str) == null) {
             levels.add(l);
         }
     }
@@ -118,6 +118,10 @@ public class Repository {
     public Activity add(Activity game) {
         if (!activities.containsKey(game.id)) {
             activities.put(game.id, game);
+        }
+        game = activities.get(game.id);
+        if (game.level == null) {
+            game.level = Level.parse(this, game.title);
         }
         return activities.get(game.id);
     }

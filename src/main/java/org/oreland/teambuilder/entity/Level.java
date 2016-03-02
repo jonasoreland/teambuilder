@@ -10,32 +10,37 @@ import java.util.Set;
  */
 public class Level {
 
-    public String name;
+    public String str;
+    public String names[];
 
-    public String toString() {
-        return name;
+    public Level(String str) {
+        this.str = str;
+        this.names = str.split("/");
     }
 
-    public static Level parseOrCreate(Repository repo, String level) {
-        if (level == null || level.isEmpty())
+    public String toString() {
+        return str;
+    }
+
+    public static Level parseOrCreate(Repository repo, String str) {
+        if (str == null || str.isEmpty())
             return null;
 
-        Level l = parse(repo, level);
+        Level l = parse(repo, str);
         if (l == null) {
-            l = new Level();
-            l.name = level;
+            l = new Level(str);
             repo.addLevel(l);
         }
         return l;
     }
 
-    public static Level parse(Repository repo, String level) {
-        if (level == null || level.isEmpty())
+    public static Level parse(Repository repo, String str) {
+        if (str == null || str.isEmpty())
             return null;
 
         Set<Level> levels = new HashSet<>();
         for (Level l : repo.getLevels()) {
-            if (level.contains(l.name))
+            if (l.Match(str))
                 levels.add(l);
         }
         if (levels.size() == 1)
@@ -47,5 +52,13 @@ public class Level {
         int a = repo.getLevelIndex(this);
         int b = repo.getLevelIndex(level);
         return a - b;
+    }
+
+    public boolean Match(String str) {
+        for (String name : this.names) {
+            if (str.contains(name))
+                return true;
+        }
+        return false;
     }
 }

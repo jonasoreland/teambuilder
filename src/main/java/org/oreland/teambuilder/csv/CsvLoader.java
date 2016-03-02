@@ -347,8 +347,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         }
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(getLevelsFilename()));
         for (CSVRecord record : records) {
-            Level l = new Level();
-            l.name = record.get("level");
+            Level l = new Level(record.get("level"));
             repo.addLevel(l);
         }
     }
@@ -358,7 +357,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader("level").print(out);
         for (Level l : repo.getLevels()) {
             List<String> rec = new ArrayList<>();
-            rec.add(l.name);
+            rec.add(l.str);
             printer.printRecord(rec);
         }
         printer.close();
