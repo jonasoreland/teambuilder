@@ -26,6 +26,7 @@ public class DialogBuilder {
     }
 
     public void setQuestion(String s) {
+        type = Dialog.Type.Question;
         question = s;
     }
 
