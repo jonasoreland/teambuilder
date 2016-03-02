@@ -7,8 +7,10 @@ import org.oreland.teambuilder.db.Filter;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Player;
+import org.oreland.teambuilder.sync.Synchronizer;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -25,6 +27,9 @@ public class Analysis {
 
     private static final double LIMIT_VERY = 0.8;
     private static final double LIMIT_LITTLE = 0.3;
+
+    private static final double PLAYED_WITH_FEW = 0.33;
+    private static final double PLAYED_WITH_MANY = 0.66;
 
     public Analysis(Repository repo) {
         this.repo = repo.clone();
@@ -141,29 +146,8 @@ public class Analysis {
         System.out.println("Barn per ledare träning: " + barn_per_ledare_training);
 
         // Compute player2player matrix
-        HashMap<Player, HashSet<Player>> matrix = new HashMap<>();
-        for (Player p : getPlayers()) {
-            if (p.guest)
-                continue;
-            if (p.type != Player.Type.PLAYER)
-                continue;
-            HashSet<Player> set = new HashSet<>();
-            for (Activity act : p.games_played) {
-                if (act.type != Activity.Type.GAME)
-                    continue;
-                for (Activity.Participant part: act.participants) {
-                    if (part.player.guest)
-                        continue;
-                    if (part.player.type != Player.Type.PLAYER)
-                        continue;
-                    set.add(part.player);
-                }
-            }
-            matrix.put(p, set);
-        }
-
-        double[] buckets = new double[]{0.3, 0.6};
-        Hist<Player> played_with_others = new Hist<>(buckets, matrix.keySet(), new PlayedWithOthers(matrix));
+        double[] buckets = new double[]{ PLAYED_WITH_FEW, PLAYED_WITH_MANY };
+        Hist<Player> played_with_others = new Hist<>(buckets, getPlayers(), new PlayedWithOthers(getPlayers(), getPlayers()));
         System.out.println("Played with others: " + played_with_others.toString());
 
         List<String> rec = new ArrayList<>();
@@ -290,6 +274,7 @@ public class Analysis {
 
     public class Hist<T> {
 
+        double sum = 0;
         double count[];
         double buckets[];
         double total = 0;
@@ -311,14 +296,16 @@ public class Analysis {
                 }
                 if (!found)
                     count[max]++;
+                sum += val;
             }
         }
 
         public String toString() {
             int max = buckets.length - 1;
             StringBuilder sb = new StringBuilder();
-            sb.append(Integer.toString((int) (100 * count[0] / total)) + String.format("%% <%.1f ", buckets[0]));
-            sb.append(Integer.toString((int) (100 * count[max] / total)) + String.format("%% >%.1f", buckets[max]));
+            sb.append(Integer.toString((int) (100 * count[0] / total)) + String.format("%% <%.2f ", buckets[0]));
+            sb.append(String.format("avg: %.2f ", sum / total));
+            sb.append(Integer.toString((int) (100 * count[max] / total)) + String.format("%% >%.2f", buckets[max]));
             return sb.toString();
         }
     }
@@ -498,9 +485,26 @@ public class Analysis {
     }
 
     private class PlayedWithOthers extends Measure<Player> {
-        HashMap<Player, HashSet<Player>> matrix;
-        public PlayedWithOthers(HashMap<Player, HashSet<Player>> matrix) {
-            this.matrix = matrix;
+        HashMap<Player, HashSet<Player>> matrix = new HashMap<>();
+
+        public PlayedWithOthers(Iterable<Player> players, Iterable<Player> playedWith) {
+            HashSet<Player> playedWithHash = new HashSet<>();
+            for (Player p : playedWith) {
+                playedWithHash.add(p);
+            }
+            for (Player p : players) {
+                HashSet<Player> set = new HashSet<>();
+                for (Activity act : p.games_played) {
+                    if (act.type != Activity.Type.GAME)
+                        continue;
+                    for (Activity.Participant part: act.participants) {
+                        if (!playedWithHash.contains(part.player))
+                            continue;
+                        set.add(part.player);
+                    }
+                }
+                matrix.put(p, set);
+            }
         }
 
         @Override
