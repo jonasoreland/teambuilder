@@ -128,7 +128,7 @@ public class Analysis {
         final CSVPrinter printer = CSVFormat.EXCEL.withHeader(
             "lag", "period", "player",
             "#träningar", "#match", "#cup",
-            "%närvaro", "spelat med %",
+            "%närvaro", "spelat med %", "#nivåer",
             "level 0", "level 1", "level 2").print(out);
         return printer;
     }
@@ -161,7 +161,7 @@ public class Analysis {
         Hist<Player> played_with_others = new Hist<>(buckets, getPlayers(), new PlayedWithOthers(getPlayers(), getPlayers()));
         System.out.println("Played with others: " + played_with_others.toString());
         {
-            System.out.println("Played level: " + new FullHist<>(getPlayers(), new LevelsPerPlayer()).toString());
+            System.out.println("Played level: " + new FullHist<>(getPlayers(), new LevelsPerPlayer()).toString("%d barn spelade %d nivåer"));
         }
         List<String> rec = new ArrayList<>();
         if (printer != null) {
@@ -281,6 +281,7 @@ public class Analysis {
                     if (act.level != null)
                         tl.getOrCreate(act.level).count++;
                 }
+                rec.add(Integer.toString(tl.distribution.size()));
                 for (Level l : repo.getLevels()) {
                     TargetLevel.Distribution d = tl.get(l);
                     if (d != null) {
@@ -383,12 +384,10 @@ public class Analysis {
             }
         }
 
-        public String toString() {
+        public String toString(String pattern) {
             StringBuilder sb = new StringBuilder();
             for (double d : set.keySet()) {
-                sb.append(Integer.toString((int) d));
-                sb.append(":");
-                sb.append(set.get(d)[0]);
+                sb.append(String.format(pattern, set.get(d)[0], (int)d));
                 sb.append(" ");
             }
             return sb.toString();
