@@ -139,9 +139,10 @@ public class Repository {
     };
 
     public Iterable<Activity> getSortedActivities(Comparator<Activity> comp) {
-        TreeSet<Activity> activities = new TreeSet<>(comp);
-        activities.addAll(this.activities.values());
-        return activities;
+        List<Activity> list = new ArrayList<>();
+        list.addAll(activities.values());
+        Collections.sort(list, comp);
+        return list;
     }
 
     public Iterable<Pair<Activity, Activity.Invitation>> getInvitations() {
