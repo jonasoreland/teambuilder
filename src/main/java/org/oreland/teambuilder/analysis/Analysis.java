@@ -173,7 +173,7 @@ public class Analysis {
                 return activity.synced && (activity.type == Activity.Type.GAME || activity.type == Activity.Type.CUP);
             }
         }));
-        PlayedWithOthers playedWithOthers = new PlayedWithOthers(getPlayers(), getPlayers());
+        PlayedWithOthers playedWithOthers = new PlayedWithOthers(getPlayers(), getPlayers(), true);
         Stat<Player> playedWithOthersStat = new Stat<Player>(getPlayers(), playedWithOthers);
 
         System.out.println("*** " + team + " - " + period);
@@ -194,7 +194,7 @@ public class Analysis {
 
         // Compute player2player matrix
         double[] buckets = new double[]{ PLAYED_WITH_FEW, PLAYED_WITH_MOST};
-        Hist<Player> played_with_others = new Hist<>(buckets, getPlayers(), new PlayedWithOthers(getPlayers(), getPlayers()));
+        Hist<Player> played_with_others = new Hist<>(buckets, getPlayers(), new PlayedWithOthers(getPlayers(), getPlayers(), true));
         System.out.println("Played with others: " + played_with_others.toString());
         {
             System.out.println("Played level: " + new FullHist<>(getPlayers(), new LevelsPerPlayer()).toString("%d barn spelade %d nivåer"));
@@ -334,7 +334,7 @@ public class Analysis {
         return false;
     }
 
-    private abstract class Measure<T> {
+    private abstract static class Measure<T> {
         public abstract double getValue(T t);
     }
 
@@ -600,23 +600,36 @@ public class Analysis {
         }
     }
 
-    private class PlayedWithOthers extends Measure<Player> {
+    public static class PlayedWithOthers extends Measure<Player> {
         HashMap<Player, HashSet<Player>> matrix = new HashMap<>();
 
-        public PlayedWithOthers(Iterable<Player> players, Iterable<Player> playedWith) {
+        public PlayedWithOthers(Iterable<Player> players, Iterable<Player> playedWith,
+                                boolean participated) {
             HashSet<Player> playedWithHash = new HashSet<>();
             for (Player p : playedWith) {
                 playedWithHash.add(p);
             }
             for (Player p : players) {
                 HashSet<Player> set = new HashSet<>();
-                for (Activity act : p.games_played) {
-                    if (act.type != Activity.Type.GAME)
-                        continue;
-                    for (Activity.Participant part: act.participants) {
-                        if (!playedWithHash.contains(part.player))
+                if (participated) {
+                    for (Activity act : p.games_played) {
+                        if (act.type != Activity.Type.GAME)
                             continue;
-                        set.add(part.player);
+                        for (Activity.Participant part : act.participants) {
+                            if (!playedWithHash.contains(part.player))
+                                continue;
+                            set.add(part.player);
+                        }
+                    }
+                } else {
+                    for (Activity.Invitation inv : p.games_invited) {
+                        if (inv.activity.type != Activity.Type.GAME)
+                            continue;
+                        for (Activity.Invitation part : inv.activity.invitations) {
+                            if (!playedWithHash.contains(part.player))
+                                continue;
+                            set.add(part.player);
+                        }
                     }
                 }
                 matrix.put(p, set);

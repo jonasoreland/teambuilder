@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.TreeSet;
 
 /**
  * Created by jonas on 10/4/15.
@@ -128,6 +129,19 @@ public class Repository {
 
     public Iterable<Activity> getActivities() {
         return activities.values();
+    }
+
+    public static Comparator<Activity> ActivityByDate = new Comparator<Activity>() {
+        @Override
+        public int compare(Activity t0, Activity t1) {
+            return t0.date.compareTo(t1.date);
+        }
+    };
+
+    public Iterable<Activity> getSortedActivities(Comparator<Activity> comp) {
+        TreeSet<Activity> activities = new TreeSet<>(comp);
+        activities.addAll(this.activities.values());
+        return activities;
     }
 
     public Iterable<Pair<Activity, Activity.Invitation>> getInvitations() {
