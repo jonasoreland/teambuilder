@@ -282,9 +282,6 @@ class Interactive {
         return selection;
     }
 
-    void set(Context ctx, Specifier section, Specifier team, Specifier period) throws Exception {
-    }
-
     private void setPlanSelection(Context ctx) throws Exception{
         List<Specifier> cwd = ctx.myclub.GetCurrent(ctx);
         if (cwd.size() == 3) {
@@ -300,32 +297,24 @@ class Interactive {
             }
         }
         if (cwd.size() != 3) {
-            Selection selection = makeSelection(ctx, ctx.myclub, false);
-            set(ctx, selection.section, selection.teams.get(0), selection.periods.get(0).second.get(0));
-            ctx.prop.store(new FileOutputStream("config.properties"), null);
-        } else {
-            ctx.csv.set(ctx, cwd.get(0), cwd.get(1), cwd.get(2));
+            Selection selection = makeSelection(ctx, ctx.csv, false);
+            cwd.add(selection.section);
+            cwd.add(selection.teams.get(0));
+            cwd.add(selection.periods.get(0).second.get(0));
         }
+        ctx.csv.setSection(ctx, cwd.get(0));
+        ctx.csv.setTeam(ctx, cwd.get(1));
+        ctx.csv.setPeriod(ctx, cwd.get(2));
     }
 
-    private void plan(boolean weekend, boolean abstractSeason) throws Exception {
-        boolean sync = false;
-        ctx.myclub.init(ctx.prop);
-        if (sync) {
-            ctx.myclub.login(ctx.prop, ctx.builder);
-            ctx.myclub.setupClub(ctx, ctx.prop, ctx.builder);
-        }
+    private void plan(boolean weekend, boolean season) throws Exception {
+        ctx.csv.init(ctx.prop);
         setPlanSelection(ctx);
         ctx.csv.load(ctx);
 
-        sync = false;
-        if (sync) {
-            // ctx.myclub.set(ctx, ctx.csv);
-            ctx.myclub.load(ctx);
-        }
         if (weekend)
             new TeamBuilder(ctx.repo).planWeekendGames(ctx);
-        if (abstractSeason)
-            new TeamBuilder(ctx.repo).planAbstractSeason(ctx);
+        if (season)
+            new TeamBuilder(ctx.repo).planSeason(ctx);
     }
 }

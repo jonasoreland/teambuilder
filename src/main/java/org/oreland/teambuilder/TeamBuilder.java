@@ -1,5 +1,8 @@
 package org.oreland.teambuilder;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.oreland.teambuilder.analysis.Analysis;
 import org.oreland.teambuilder.db.Filter;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
@@ -9,14 +12,19 @@ import org.oreland.teambuilder.entity.TargetLevel;
 import org.oreland.teambuilder.ui.Dialog;
 import org.oreland.teambuilder.ui.DialogBuilder;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 class TeamBuilder {
 
@@ -52,13 +60,16 @@ class TeamBuilder {
             }
             return sum;
         }
-    };
+    }
+
+    ;
 
     private final Repository repo;
     private TargetLevel playersPerGame;
     private TargetLevel gamesPerLevel;
     private List<Pair<Level, TargetLevel>> distribution;
     private List<ScoredPlayer> scoredPlayers;
+    private List<Player> players = new ArrayList<>();
 
     public TeamBuilder(Repository repo) {
         this.repo = repo.clone();
@@ -75,42 +86,81 @@ class TeamBuilder {
         // 2. Determine number of/and create games per level
         askGamesPerLevel();
 
+        // Plan season
+        planSeason(ctx);
+    }
+
+    public void planSeason(Context ctx) throws Exception {
+        this.repo.prune(new Filter<Activity>() {
+            @Override
+            public boolean OK(Activity o) {
+                if (o.type != Activity.Type.GAME)
+                    return false;
+                if (o.synced == true)
+                    return false;
+                if (o.level == null)
+                    return false;
+                return true;
+            }
+        });
+
         // 3. compute how to construct teams
         computeDistribution();
 
-        for (ScoredPlayer p : getScoredPlayers()) {
-            double underflow = 0;
-            for (Level l : repo.getLevelsReverse()) {
-                // add games per level upp until target
+        boolean old = true;
+        if (old) {
+            for (ScoredPlayer p : getScoredPlayers()) {
+                for (Level l : repo.getLevelsReverse()) {
+                    // add games per level upp until target
 
-                // player should not play any such games
-                if (p.targetGamesPerLevel.get(l) == null)
-                    continue;
+                    // player should not play any such games
+                    if (p.targetGamesPerLevel.get(l) == null)
+                        continue;
 
-                double played = p.gamesPlayed.getOrCreate(l).count;
-                double target = p.targetGamesPerLevel.get(l).count;
-                for (double i = played; i < target + underflow; i++) {
-                    Activity a = findGameForPlayer(p.player, l);
-                    if (a == null) {
-                        underflow = target + underflow - i;
-                        break;
+                    double played = p.gamesPlayed.getOrCreate(l).count;
+                    double target = p.targetGamesPerLevel.get(l).count;
+                    for (double i = played; i < target; i++) {
+                        Activity a = findGameForPlayer(p.player, l);
+                        if (a == null) {
+                            break;
+                        }
+                        repo.addParticipant(a, p.player);
                     }
-                    repo.addParticipant(a, p.player);
                 }
+            }
+        } else {
+            for (Level l : repo.getLevels()) {
+                boolean found = false;
+                do {
+                    found = false;
+                    for (ScoredPlayer p1 : getScoredPlayers()) {
+                        if (p1.targetGamesPerLevel.get(l) == null)
+                            continue;
+                        if (p1.targetGamesPerLevel.get(l).count > p1.gamesPlayed.getOrCreate(l).count) {
+                            Activity a = findGameForPlayer(p1.player, l);
+                            if (a == null) {
+                                break;
+                            }
+                            found = true;
+                            repo.addParticipant(a, p1.player);
+                            p1.gamesPlayed.get(l).count++;
+                        }
+                    }
+                } while (found);
             }
         }
 
         // 4. print teams
-        printTeams(repo.getActivities());
+        printTeams(ctx, repo.getSortedActivities(repo.ActivityByDate));
 
         // 5. print stats
         for (ScoredPlayer p : getScoredPlayers()) {
             System.out.println(p.player + ", played: " + p.player.games_level + ", target: " + p.player.target_level +
-            ", computed: " + p.targetGamesPerLevel);
+                    ", computed: " + p.targetGamesPerLevel);
         }
     }
 
-    private Activity findGameForPlayer(Player player, Level l) {
+    private Activity findGameForPlayer(final Player player, final Level l) {
         List<Activity> list = new ArrayList<>();
         for (Activity a : repo.getActivities()) {
             if (a.level != l)
@@ -119,28 +169,136 @@ class TeamBuilder {
                 continue;
             list.add(a);
         }
+        if (list.size() == 0)
+            return null;
 
-        // pick games with least players
-        Activity game = null;
-        for (Activity a : list) {
-            if (game == null)
-                game = a;
-            if (a.participants.size() < game.participants.size())
-                game = a;
+        // pick games with not too many players
+        filter(list, new Analysis.Measure<Activity>() {
+            @Override
+            public double getValue(Activity activity) {
+                if (activity.participants.size() >= playersPerGame.get(l).count)
+                    return 0;
+                return 1;
+            }
+        }, 0);
+
+        // filter out double games
+        final HashSet<Date> dates_played = new HashSet<>();
+        for (Activity a : player.games_played) {
+            dates_played.add(a.date);
+        }
+        filter(list, new Analysis.Measure<Activity>() {
+            @Override
+            public double getValue(Activity activity) {
+                if (dates_played.contains(activity.date))
+                    return 0;
+                return 1;
+            }
+        }, 0);
+
+        // pick games that players has not played other players
+        final Analysis.PlayedWithOthers others = new Analysis.PlayedWithOthers(players, players);
+        filter(list, new Analysis.Measure<Activity>() {
+            @Override
+            public double getValue(Activity activity) {
+                int sum = 0;
+                for (Activity.Participant part : activity.participants) {
+                    sum += others.hasPlayed(player, part.player);
+                }
+                return -sum;
+            }
+        }, 0);
+
+        // Avoid 2 games per weekend
+        if (player.games_played.size() > 0) {
+            final Date last_played = player.games_played.get(player.games_played.size() - 1).date;
+            filter(list, new Analysis.Measure<Activity>() {
+                @Override
+                public double getValue(Activity activity) {
+                    long diff = TimeUnit.MILLISECONDS.toDays(activity.date.getTime() - last_played.getTime());
+                    if (diff > 1)
+                        return 1;
+                    return 0;
+                }
+            }, 0);
         }
 
-        return game;
+        return list.get((int) Math.floor(Math.random() * list.size()));
     }
 
-    private void printTeams(Iterable<Activity> list) {
+    private void filter(Collection<Activity> list, Analysis.Measure<Activity> measure,
+                        double threshold) {
+
+        double bestScore = Double.NEGATIVE_INFINITY;
+
+        if (list.size() == 0) {
+            System.out.println("bestScore: " + bestScore);
+            System.out.println("threshold: " + threshold);
+            System.out.println("list.size(): " + list.size());
+            StringBuffer sb = null;
+            sb.append("kalle");
+        }
+
+        for (Activity a : list) {
+            double score = measure.getValue(a);
+            if (score > bestScore) {
+                bestScore = score;
+            }
+        }
+
+        List<Activity> list2 = new ArrayList<>();
+        for (Activity a : list) {
+            double score = measure.getValue(a);
+            if (score + threshold >= bestScore) {
+                list2.add(a);
+            }
+        }
+
+        if (list2.size() == 0) {
+            System.out.println("bestScore: " + bestScore);
+            System.out.println("threshold: " + threshold);
+            System.out.println("list.size(): " + list.size());
+            for (Activity a : list) {
+                double score = measure.getValue(a);
+                System.out.println("score: " + score);
+            }
+            StringBuffer sb = null;
+            sb.append("kalle");
+        }
+
+        list.clear();
+        list.addAll(list2);
+    }
+
+    private void printTeams(Context ctx, Iterable<Activity> list) throws IOException {
         for (Activity a : list) {
             System.out.println("*** " + a + ", " + a.level + ", " + a.getDistribution());
             for (Activity.Participant p : a.participants) {
-                System.out.println(p.player + ", " + p.player.target_level + ", played: " + p.player.games_level + " => next: " +
-                        p.player.target_level.getNextGameLevel(p.player.games_level));
+                System.out.println(p.player + ", " + p.player.target_level + ", played: " + p.player.games_level);
             }
             System.out.println("");
         }
+
+        final Appendable out = new FileWriter(ctx.wd + "/schema.csv");
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("date", "time", "name", "level").print(out);
+        final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        for (Activity a : list) {
+            List<String> rec = new ArrayList<>();
+            rec.add(formatter.format(a.date));
+            rec.add(a.time);
+            rec.add(a.title);
+            rec.add(a.level.toString());
+            printer.printRecord(rec);
+            for (Activity.Participant p : a.participants) {
+                rec = new ArrayList<>();
+                rec.add("");
+                rec.add("");
+                rec.add(p.player.first_name + " " + p.player.last_name);
+                printer.printRecord(rec);
+            }
+        }
+        printer.flush();
+        printer.close();
     }
 
     private void askGamesPerLevel() {
@@ -186,7 +344,7 @@ class TeamBuilder {
         // 3. Compute teams
         computeTeams(games);
         // 4. Print teams
-        printTeams(games);
+        printTeams(ctx, games);
     }
 
     private void setStartOfWeek(Calendar cal) {
@@ -366,11 +524,13 @@ class TeamBuilder {
         if (scoredPlayers != null) {
             return scoredPlayers;
         }
+        players = new ArrayList<>();
         scoredPlayers = new ArrayList<>();
         for (Player p : repo.getPlayers()) {
             if (p.type != Player.Type.PLAYER)
                 continue;
             if (p.target_level != null) {
+                players.add(p);
                 scoredPlayers.add(new ScoredPlayer(p));
             } else {
                 System.out.println(p + " has no target level!");
@@ -385,6 +545,11 @@ class TeamBuilder {
             }
         });
         return scoredPlayers;
+    }
+
+    List<Player> getPlayers() {
+        getScoredPlayers();
+        return players;
     }
 
     private void computeDistribution() throws Exception {
