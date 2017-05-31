@@ -448,6 +448,8 @@ public class Analysis {
                 if (p.player.type == Player.Type.PLAYER)
                     barn++;
             }
+            if (ledare == 0)
+              ledare = 1;
             return barn / ledare;
         }
     }
