@@ -302,7 +302,7 @@ public class MyClub extends DefaultSynchronizer {
 
     private Document get(String baseUrl) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl).openConnection();
-        conn.setInstanceFollowRedirects(false);
+        // conn.setInstanceFollowRedirects(false);
         addRequestHeaders(conn);
         conn = send(baseUrl, conn);
         Document doc = Jsoup.parse(conn.getInputStream(), "UTF-8", baseUrl);
@@ -312,7 +312,7 @@ public class MyClub extends DefaultSynchronizer {
 
     private JSONArray getJsonArray(String baseUrl) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl).openConnection();
-        conn.setInstanceFollowRedirects(false);
+        // conn.setInstanceFollowRedirects(false);
         addRequestHeaders(conn);
         conn = send(baseUrl, conn);
         JSONArray doc = SyncHelper.parseJsonArray(conn.getInputStream());
@@ -430,6 +430,8 @@ public class MyClub extends DefaultSynchronizer {
                     || status == HttpURLConnection.HTTP_MOVED_PERM
                     || status == HttpURLConnection.HTTP_SEE_OTHER) {
                 String newUrl = conn.getHeaderField("Location");
+                System.err.println("status: " + status +
+                    ", Location: " + newUrl);
                 conn = (HttpURLConnection) new URL(newUrl).openConnection();
                 addRequestHeaders(conn);
                 return send(newUrl, conn);
@@ -450,7 +452,7 @@ public class MyClub extends DefaultSynchronizer {
         for (int i = 0; i < players.length(); i++) {
             JSONObject o = players.getJSONObject(i);
             Player p = new Player(o.getString("first_name"), o.getString("last_name"));
-            p.type = o.getBoolean("is_leader") ? Player.Type.LEADER : Player.Type.PLAYER;
+            p.type = o.getString("is_leader").equalsIgnoreCase("Ledare") ? Player.Type.LEADER : Player.Type.PLAYER;
             p = ctx.repo.add(p);
             String targetstr = o.optString(key);
             TargetLevel target = TargetLevel.parseJson(ctx.repo, targetstr);
