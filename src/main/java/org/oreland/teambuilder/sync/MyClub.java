@@ -47,7 +47,8 @@ public class MyClub extends DefaultSynchronizer {
     private static final String PARTICIPANTS_URL = BASE_URL + "/activities/team/view_parts/";
     private static final String INVITATIONS_URL = BASE_URL + "/activities/team/view_invited/";
     private static final String DESCRIPTION_URL = BASE_URL + "/activities/team/edit_info/";
-    private static final String PLAYER_URL = BASE_URL + "/ut/team/";
+    private static final String PLAYER_URL = BASE_URL + "/teams/";
+    private static final String PLAYER_JSON_URL = BASE_URL + "/teams/";
 
     private static final String CLUB_NAME = "clubName";
     private static final String CLUB_KEY = "club";
@@ -448,7 +449,7 @@ public class MyClub extends DefaultSynchronizer {
             setupSpelarinfo(ctx, ctx.prop, ctx.builder);
             key = ctx.prop.getProperty(SPELAR_INFO);
         }
-        JSONArray players = getJsonArray(PLAYER_URL + ctx.prop.getProperty(TEAM_NO) + "/members/json");
+        JSONArray players = getJsonArray(getPlayerJsonUrl(ctx));
         for (int i = 0; i < players.length(); i++) {
             JSONObject o = players.getJSONObject(i);
             Player p = new Player(o.getString("first_name"), o.getString("last_name"));
@@ -518,8 +519,8 @@ public class MyClub extends DefaultSynchronizer {
             }
             if (activity != null && activity.synced == false && activity.date.before(limit)) {
                 System.err.println("Loading invitations/participants for " + activity.toString());
-                loadInvitations(repo, activity);
-                loadParticipants(repo, activity);
+                loadInvitations(ctx, activity);
+                loadParticipants(ctx, activity);
                 if (activity.date.before(today)) {
                     String status = columns.get(9).text();
                     if (status.matches(".*[Gg]odk.*nd") || status.matches(".*Delvis godk.*")) {
@@ -548,9 +549,10 @@ public class MyClub extends DefaultSynchronizer {
         }
     }
 
-    private void loadParticipants(Repository repo, Activity activity) throws IOException {
+    private void loadParticipants(Context ctx, Activity activity) throws IOException {
+        Repository repo = ctx.repo;
         activity.participants.clear();
-        Document doc = get(getParticipantsUrl(activity));
+        Document doc = get(getParticipantsUrl(ctx, activity));
         String tables[] = new String[]{"participants_table", "leaders_table"};
         Player.Type types[] = new Player.Type[]{Player.Type.PLAYER, Player.Type.LEADER};
         for (int i = 0; i < tables.length; i++) {
@@ -580,16 +582,27 @@ public class MyClub extends DefaultSynchronizer {
         }
     }
 
-    private void loadInvitations(Repository repo, Activity activity) throws IOException, ParseException {
+    private void loadInvitations(Context ctx, Activity activity) throws IOException, ParseException {
+        Repository repo = ctx.repo;
         activity.invitations.clear();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:ss");
-        Document doc = get(getInvitationsUrl(activity));
-        Element table = doc.select("table[id=invited_table]").first().select("tbody").first();
+        Document doc = get(getInvitationsUrl(ctx, activity));
+        Element table = doc.select("table").first().select("tbody").first();
         for (Element row : table.select("tr")) {
             Elements columns = row.select("td");
             if (columns.size() < 6)
                 continue;
-//          <tr>
+            // 0 <td><i class='fa fa-user-circle-o'></i> Malin</td>
+            // 1 <td>Broman Lindfors</td>
+            // 2 <td class="visible-lg visible-md"><p class="btn btn-xs tool-tip pop-over" href="#" data-toggle="popover" data-content="malinbroman@yahoo.se" title=""><i class="fa fa-envelope"></i></p></td>
+            // 3 <td class="hidden-xs">1</td>
+            // 4 <td class="visible-lg">2018-02-12 09:29</td>
+            // 5 <td class="hidden-xs">-</td>
+            // 6 <td><div class="btn-group" data-toggle="buttons-radio"><button type="button" data-id="6564120" data-response="yes" class="respond btn active btn-success btn-xs">Ja</button><button type="button" data-id="6564120" data-response="no" class="respond btn btn-default btn-xs">Nej</button></div><p class="btn btn-xs tool-tip pop-over" href="#" data-toggle="popover" data-content="Kan ta med två barn i bilen (utöver mina två egna)" title=""><i class="fa fa-comment"></i></p></td>
+            // 7 <td class="visible-lg visible-md">2018-02-13 20:57</td>
+            // 8 <td class="button_cell"><a class="btn btn-xs btn-default" data-toggle="modal" href="#send_email_6564120" "title="Skicka inbjudsningsmejl nu."><i class="fa fa-envelope-o"></i></a></td>
+
+            //          <tr>
 //       0     <td class=" sorting_1">Alfred</td>
 //       1     <td class=" ">Wettergren</td>
 //       2     <td class="hidden-xs ">Deltagare</td>
@@ -608,28 +621,33 @@ public class MyClub extends DefaultSynchronizer {
 //       9     <td class="button_cell "></td>
 //          </tr>
 
+            int first_name_col = 0;
+            int last_name_col = 1;
+            int invitation_date_col = 4;
+            int response_col = 6;
+            int response_date_col = 7;
+
+            if (columns.size() < 8) {
+              // Completed activities has less columns...
+              response_col = 5;
+              response_date_col = 6;
+            }
+
             // If no invitation is sent...skip player
-            if (columns.get(5).text().isEmpty())
+            if (columns.get(invitation_date_col).text().isEmpty())
                 continue;
 
-            int response_col = 7;
-            int response_date_col = 8;
-            if (columns.size() == 9) {
-
-            } else if (columns.size() == 8) {
-                // Activity completed
-                response_col = 6;
-                response_date_col = 7;
-            }
-            Player p = new Player(columns.get(0).text(), columns.get(1).text());
-            p.type = Player.Type.parse(columns.get(2).text());
+            Player p = new Player(
+                columns.get(first_name_col).text(),
+                columns.get(last_name_col).text());
             if (repo.getPlayer(p.first_name, p.last_name) == null) {
                 continue;
             }
             Activity.Invitation invitation = new Activity.Invitation(activity);
             invitation.player = repo.add(p);
-            if (!columns.get(5).text().isEmpty())
-                invitation.invitation_date = formatter.parse(columns.get(5).text());
+            if (!columns.get(invitation_date_col).text().isEmpty())
+              invitation.invitation_date = formatter.parse(columns.get(
+                    invitation_date_col).text());
             if (!columns.get(response_date_col).text().isEmpty()) {
                 invitation.response_date = formatter.parse(columns.get(response_date_col).text());
                 Element col = columns.get(response_col);
@@ -655,12 +673,18 @@ public class MyClub extends DefaultSynchronizer {
         return DESCRIPTION_URL + activity.id + "/";
     }
 
-    private String getParticipantsUrl(Activity activity) {
+    private String getParticipantsUrl(Context ctx, Activity activity) {
         return PARTICIPANTS_URL + activity.id + "/";
     }
 
-    private String getInvitationsUrl(Activity activity) {
-        return INVITATIONS_URL + activity.id + "/";
+    private String getInvitationsUrl(Context ctx, Activity activity) {
+        return BASE_URL +
+            "/teams/" + ctx.prop.getProperty(TEAM_NO) +
+            "/calendar/" + activity.id + "/view-invited";
+    }
+
+    private String getPlayerJsonUrl(Context ctx) {
+      return PLAYER_JSON_URL + ctx.prop.getProperty(TEAM_NO) + "/members/json";
     }
 
     @Override
