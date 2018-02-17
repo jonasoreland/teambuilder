@@ -5,6 +5,8 @@ import org.oreland.teambuilder.entity.Activity;
 import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
+import org.oreland.teambuilder.entity.Payment;
+import org.oreland.teambuilder.entity.Fee;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,6 +26,8 @@ public class Repository {
     private HashMap<String, Activity> activities = new HashMap<>();
     private HashMap<String, Player> playersByName = new HashMap<>();
     private List<Level> levels = new ArrayList<>();
+    private HashMap<Fee, Fee> fees = new HashMap<>();
+    private ArrayList<Payment> payments = new ArrayList<>();
 
     public void reset() {
         activities.clear();
@@ -59,6 +63,9 @@ public class Repository {
             }
         }
         rep.levels.addAll(this.levels);
+
+        rep.fees = new HashMap<>(this.fees);
+        rep.payments.addAll(this.payments);
         return rep;
     }
 
@@ -384,5 +391,21 @@ public class Repository {
         Object o = null;
         o.toString();
         return 0;
+    }
+
+    public Fee getFee(String name) {
+        Fee f = new Fee(name);
+        if (!fees.containsKey(f)) {
+            fees.put(f, f);
+        }
+        return fees.get(f);
+    }
+
+    public Iterable<Payment> getPayments() {
+        return payments;
+    }
+
+    public void addPayment(Payment p) {
+        payments.add(p);
     }
 }

@@ -7,9 +7,11 @@ import org.oreland.teambuilder.Context;
 import org.oreland.teambuilder.Pair;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Fee;
 import org.oreland.teambuilder.entity.Level;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
+import org.oreland.teambuilder.entity.Payment;
 import org.oreland.teambuilder.sync.DefaultSynchronizer;
 import org.oreland.teambuilder.sync.MyClub;
 import org.oreland.teambuilder.sync.Synchronizer;
@@ -82,12 +84,17 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         return dir + "/" + "levels.csv";
     }
 
+    private String getPaymentsFilename() {
+        return dir + "/" + "payments.csv";
+    }
+
     public void load(Context ctx) throws IOException, ParseException {
         changeDir(ctx);
         loadPlayers(ctx.repo);
         loadActivities(ctx.repo);
         loadInvitations(ctx.repo);
         loadParticipants(ctx.repo);
+        loadPayments(ctx.repo);
     }
 
     public void save(Context ctx) throws IOException, ParseException {
@@ -97,6 +104,7 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
         saveActivities(ctx.repo);
         saveInvitations(ctx.repo);
         saveParticipants(ctx.repo);
+        savePayments(ctx.repo);
     }
 
     @Override
@@ -418,6 +426,42 @@ public class CsvLoader extends DefaultSynchronizer implements Synchronizer {
                     printer.printRecord(rec);
                 }
             }
+        }
+        printer.close();
+    }
+    private void loadPayments(Repository repo) throws ParseException, IOException {
+        if (!new File(getPaymentsFilename()).exists()) {
+            return;
+        }
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(getPaymentsFilename()));
+        for (CSVRecord record : records) {
+            Payment p = new Payment();
+            p.player = repo.getPlayer(record.get("first_name"), record.get("last_name"));
+            Fee f = repo.getFee(record.get("fee"));
+            p.amount = Integer.parseInt(record.get("amount"));
+            if (!record.get("payment_date").isEmpty())
+                p.payment_date = formatter.parse(record.get("payment_date"));
+            repo.addPayment(p);
+        }
+    }
+
+    private void savePayments(Repository repo) throws ParseException, IOException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        final Appendable out = new FileWriter(dir + "/" + "payments.csv");
+        final CSVPrinter printer = CSVFormat.EXCEL.withHeader("first_name", "last_name", "fee", "amount", "payment_date").print(out);
+        for (Payment p : repo.getPayments()) {
+            List<String> rec = new ArrayList<>();
+            rec.add(p.player.first_name);
+            rec.add(p.player.last_name);
+            rec.add(p.fee.name);
+            rec.add(Integer.toString(p.amount));
+            if (p.payment_date != null) {
+                rec.add(formatter.format(p.payment_date));
+            } else {
+                rec.add("");
+            }
+            printer.printRecord(rec);
         }
         printer.close();
     }

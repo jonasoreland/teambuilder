@@ -5,38 +5,41 @@ package org.oreland.teambuilder.entity;
  */
 public class Fee {
 
-  public Fee(String name) {
-    this.name = name;
-    this.amount = 0;
-  }
+    public Fee() {
+    }
 
-  public Fee(String name, int amount) {
-    this.name = name;
-    this.amount = amount;
-  }
+    public Fee(String name) {
+        this.name = name;
+        this.amount = 0;
+    }
 
-  public Fee copy() {
-    Fee f = new Fee(this.name, amount);
-    return f;
-  }
+    public Fee(String name, int amount) {
+        this.name = name;
+        this.amount = amount;
+    }
 
-  public String toString() {
-    return "[ " + name + " ]";
-  }
+    public Fee copy() {
+        Fee f = new Fee(this.name, amount);
+        return f;
+    }
 
-  @Override
-  public boolean equals (Object o) {
-    if (! (o instanceof Fee))
-      return false;
-    Fee f = (Fee)o;
-    return name.equals(f.name);
-  }
+    public String toString() {
+        return "[ " + name + " ]";
+    }
 
-  @Override
-  public int hashCode() {
-    return name.hashCode();
-  }
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Fee))
+            return false;
+        Fee f = (Fee) o;
+        return name.equals(f.name);
+    }
 
-  public String name;
-  public int amount;
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    public String name;
+    public int amount;
 }
