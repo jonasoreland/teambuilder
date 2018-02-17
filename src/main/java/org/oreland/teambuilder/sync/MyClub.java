@@ -10,7 +10,9 @@ import org.oreland.teambuilder.Context;
 import org.oreland.teambuilder.Pair;
 import org.oreland.teambuilder.db.Repository;
 import org.oreland.teambuilder.entity.Activity;
+import org.oreland.teambuilder.entity.Fee;
 import org.oreland.teambuilder.entity.Level;
+import org.oreland.teambuilder.entity.Payment;
 import org.oreland.teambuilder.entity.Player;
 import org.oreland.teambuilder.entity.TargetLevel;
 import org.oreland.teambuilder.sync.util.FormValues;
@@ -33,6 +35,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Created by jonas on 10/1/15.
@@ -669,6 +673,54 @@ public class MyClub extends DefaultSynchronizer {
         }
     }
 
+    private Payment parsePayment(Fee fee, Element col) {
+        if (fee == null)
+            return null;
+        String txt = col.toString().toLowerCase();
+        if (txt.contains("ej fakturerad") || txt.contains("not-invoiced"))
+            return null;
+
+        if (txt.contains("ej betald"))
+            return new Payment(fee, 0);
+
+        Pattern p = Pattern.compile("umma: [0-9]+");
+        Matcher m = p.matcher(txt);
+        if (m.find()) {
+            String s = m.group();
+            Integer i = Integer.valueOf(s.substring("umma: ".length()));
+            return new Payment(fee, i.intValue());
+        }
+        System.out.println("parsePayment(" + fee + ", " + col.toString() + " => null");
+        return null;
+    }
+
+    private void loadPayments(Context ctx) throws IOException, ParseException {
+        Repository repo = ctx.repo;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        Document doc = get(getPaymentsUrl(ctx));
+        Elements th_row = doc.select("table").first().select("thead").first().select("tr").select("th");
+
+        Fee fees[] = new Fee[th_row.size()];
+        for (int i = 2; i < fees.length; i++) {
+            // Col 0 = Namn
+            // Col 1 = Typ
+            // Col 2..N Avgift
+            fees[i] = repo.getFee(th_row.get(i).attr("title"));
+        }
+
+        for (Element row : doc.select("table").first().select("tbody").first().select("tr")) {
+            Elements cols = row.select("td");
+            Player p = repo.getPlayerByType(cols.get(0).text(), Player.Type.parse(cols.get(1).text()));
+            for (int i = 2; i < cols.size(); i++) {
+                Payment pay = parsePayment(fees[i], cols.get(i));
+                if (pay != null && p != null) {
+                    pay.player = p;
+                    repo.addPayment(pay);
+                }
+            }
+        }
+    }
+
     private String getDescriptionUrl(Activity activity) {
         return DESCRIPTION_URL + activity.id + "/";
     }
@@ -685,6 +737,12 @@ public class MyClub extends DefaultSynchronizer {
 
     private String getPlayerJsonUrl(Context ctx) {
       return PLAYER_JSON_URL + ctx.prop.getProperty(TEAM_NO) + "/members/json";
+    }
+
+    private String getPaymentsUrl(Context ctx) {
+        return BASE_URL +
+                "/teams/" + ctx.prop.getProperty(TEAM_NO) +
+                "/fees/";
     }
 
     @Override
@@ -759,6 +817,7 @@ public class MyClub extends DefaultSynchronizer {
 
     public void load(Context ctx) throws Exception {
         loadPlayers(ctx);
+        loadPayments(ctx);
         loadActivities(ctx);
     }
 

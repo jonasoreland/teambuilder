@@ -55,7 +55,11 @@ public class Player {
             String tmp = s.toLowerCase();
             if (tmp.matches("ledare"))
                 return LEADER;
+            if (tmp.matches("tränare"))
+                return LEADER;
             if (tmp.matches("deltagare"))
+                return PLAYER;
+            if (tmp.matches("spelare"))
                 return PLAYER;
             return null;
         }

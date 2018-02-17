@@ -100,15 +100,22 @@ public class Repository {
     }
 
     public Player add(Player p) {
-        String key = p.first_name + p.last_name;
-        if (!playersByName.containsKey(key))
-            playersByName.put(key, p);
-        return playersByName.get(key);
+        String k = p.first_name + " " + p.last_name;
+        if (!playersByName.containsKey(k))
+            playersByName.put(k, p);
+        return playersByName.get(k);
     }
 
     public Player getPlayer(String first_name, String last_name) {
-        String key = first_name + last_name;
-        return playersByName.get(key);
+        String k = first_name + " " + last_name;
+        return playersByName.get(k);
+    }
+
+    public Player getPlayerByType(String name, Player.Type type) {
+        if (playersByName.containsKey(name))
+            return playersByName.get(name);
+        System.out.println("getPlayerByType("+name+"," + type + " => null");
+        return null;
     }
 
     public void addTarget(Player p, TargetLevel level, Date date) {

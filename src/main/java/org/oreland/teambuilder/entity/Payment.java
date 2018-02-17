@@ -10,14 +10,14 @@ public class Payment {
     public Payment() {
     }
 
-    public Payment(Fee f, Player p) {
+    public Payment(Fee f, int amount) {
         this.fee = f;
-        this.player = p;
-        this.amount = f.amount;
+        this.amount = amount;
     }
 
     public Payment copy() {
-        Payment f = new Payment(this.fee, this.player);
+        Payment f = new Payment(this.fee, this.amount);
+        f.player = this.player;
         return f;
     }
 
